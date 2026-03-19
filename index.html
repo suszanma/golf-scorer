@@ -26,10 +26,6 @@ button{cursor:pointer;background:none;border:none}
 .tab-btn.active{border-bottom-color:#4ade80;color:#4ade80}
 .btn-primary{width:100%;padding:16px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:12px;color:#fff;font-size:17px;font-weight:800;box-shadow:0 4px 24px rgba(34,197,94,0.3);font-family:Georgia,serif}
 .btn-secondary{padding:14px;background:none;border:1px solid #2a3d2a;border-radius:12px;color:#6b8f6b;font-size:15px;font-weight:700;font-family:Georgia,serif}
-.sc-grid{display:grid;gap:3px;padding:4px 2px;border-radius:6px;margin-bottom:2px;border:1px solid transparent}
-.sc-header{display:grid;gap:3px;margin-bottom:5px;padding:0 2px}
-.sc-subtotal{display:grid;gap:3px;padding:6px 2px 8px;border-radius:6px;background:rgba(74,222,128,0.04);border:1px solid #2a3d2a;margin-bottom:8px}
-/* Toggle switch */
 .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #1a271a}
 .toggle{position:relative;width:44px;height:26px;flex-shrink:0}
 .toggle input{opacity:0;width:0;height:0}
@@ -42,59 +38,59 @@ button{cursor:pointer;background:none;border:none}
 <body>
 <div id="app"></div>
 <script>
-const DEFAULT_PARS = [4,4,3,4,5,3,4,4,5,4,3,4,5,4,3,4,4,5];
-const DEFAULT_HCP  = [11,3,15,7,1,17,13,5,9,10,16,6,2,14,18,8,4,12];
-const PCOLORS      = ["#4ade80","#fbbf24","#60a5fa","#f87171"];
-const STORAGE_KEY  = "golf-scorer-v3";
+const DEFAULT_PARS=[4,4,3,4,5,3,4,4,5,4,3,4,5,4,3,4,4,5];
+const DEFAULT_HCP=[11,3,15,7,1,17,13,5,9,10,16,6,2,14,18,8,4,12];
+const PCOLORS=["#4ade80","#fbbf24","#60a5fa","#f87171","#c084fc","#fb923c","#34d399","#f472b6"];
+const STORAGE_KEY="golf-scorer-v4";
+const MAX_PLAYERS=8;
+const MAX_ROUNDS=6;
+
+// ─── Default makers ───────────────────────────────────────────────────────────
+function mkRound(n){
+return {label:“Round “+n,teeBox:””,courseRating:“72.0”,courseSlope:“113”,
+teams:[[0,1],[2,3]],  // array of arrays; each inner array is one team
+pars:[…DEFAULT_PARS],hcpIdx:[…DEFAULT_HCP]};
+}
+function mkScoresForRound(){
+// scores[player][hole] — sized to current player count dynamically at save
+return Array(MAX_PLAYERS).fill(null).map(()=>Array(18).fill(””));
+}
 
 // ─── State ────────────────────────────────────────────────────────────────────
-let state = {
-screen:“setup”, setupStep:0, activeRound:0, expandedRound:null,
-tab:“leaderboard”, saveStatus:“idle”,
-// Global scoring mode & handicap mode (persist)
-netEntryMode: false,      // false=enter gross, true=enter net directly
-useSlopeRating: true,     // false=skip slope/rating, use raw hcp index only
+let state={
+screen:“setup”,setupStep:0,activeRound:0,expandedRound:null,
+tab:“leaderboard”,saveStatus:“idle”,
+netEntryMode:false,
+useSlopeRating:true,
 players:[
 {name:“Player 1”,handicap:“10.4”},
 {name:“Player 2”,handicap:“14.2”},
 {name:“Player 3”,handicap:“8.1”},
 {name:“Player 4”,handicap:“18.7”},
 ],
-rounds: mkRounds(),
-scores: mkScores(),
+rounds:[mkRound(1),mkRound(2),mkRound(3)],
+scores:[mkScoresForRound(),mkScoresForRound(),mkScoresForRound()],
 };
-
-function mkRounds(){
-return [
-{label:“Round 1”,teeBox:””,courseRating:“72.0”,courseSlope:“113”,pair1:[0,1],pair2:[2,3],pars:[…DEFAULT_PARS],hcpIdx:[…DEFAULT_HCP]},
-{label:“Round 2”,teeBox:””,courseRating:“72.0”,courseSlope:“113”,pair1:[0,2],pair2:[1,3],pars:[…DEFAULT_PARS],hcpIdx:[…DEFAULT_HCP]},
-{label:“Round 3”,teeBox:””,courseRating:“72.0”,courseSlope:“113”,pair1:[0,3],pair2:[1,2],pars:[…DEFAULT_PARS],hcpIdx:[…DEFAULT_HCP]},
-];
-}
-function mkScores(){
-// scores[round][player][hole] — stores gross OR net string depending on mode
-return Array(3).fill(null).map(()=>Array(4).fill(null).map(()=>Array(18).fill(””)));
-}
 
 // ─── Storage ──────────────────────────────────────────────────────────────────
 let saveTimer=null;
 function loadState(){
 try{
 const raw=localStorage.getItem(STORAGE_KEY);
-if(!raw) return;
+if(!raw)return;
 const s=JSON.parse(raw);
 if(s.players) state.players=s.players;
-if(s.rounds)  state.rounds=s.rounds;
+if(s.rounds)  state.rounds=s.rounds.map(r=>({teeBox:””,teams:[[0,1],[2,3]],…r}));
 if(s.scores)  state.scores=s.scores;
 if(s.netEntryMode!==undefined) state.netEntryMode=s.netEntryMode;
-// back-fill teeBox for saves that predate this field
-if(s.rounds) state.rounds=state.rounds.map((r,i)=>({teeBox:””,…r}));
 if(s.useSlopeRating!==undefined) state.useSlopeRating=s.useSlopeRating;
+// Ensure scores array matches round count
+while(state.scores.length<state.rounds.length) state.scores.push(mkScoresForRound());
 }catch(e){}
 }
 function scheduleSave(){
 clearTimeout(saveTimer);
-state.saveStatus=“saving”; renderSaveStatus();
+state.saveStatus=“saving”;renderSaveStatus();
 saveTimer=setTimeout(()=>{
 try{
 localStorage.setItem(STORAGE_KEY,JSON.stringify({
@@ -111,78 +107,138 @@ function renderSaveStatus(){
 document.querySelectorAll(”.save-status”).forEach(el=>{
 if(state.saveStatus===“idle”){el.textContent=””;return;}
 const c={saving:{t:“Saving…”,c:”#6b8f6b”},saved:{t:“✓ Saved”,c:”#4ade80”},error:{t:“⚠ Failed”,c:”#f87171”}}[state.saveStatus];
-el.textContent=c.t; el.style.color=c.c;
+el.textContent=c.t;el.style.color=c.c;
 });
 }
 
-// ─── Handicap / Scoring Logic ─────────────────────────────────────────────────
+// ─── Round management ─────────────────────────────────────────────────────────
+function addRound(){
+if(state.rounds.length>=MAX_ROUNDS)return;
+state.rounds.push(mkRound(state.rounds.length+1));
+state.scores.push(mkScoresForRound());
+scheduleSave();renderApp();
+}
+function removeRound(ri){
+const hasScores=state.scores[ri].some(p=>p.some(s=>s!==””));
+if(hasScores&&!confirm(“Round “+(ri+1)+” has scores entered. Remove it anyway?”))return;
+state.rounds.splice(ri,1);
+state.scores.splice(ri,1);
+if(state.activeRound>=state.rounds.length) state.activeRound=Math.max(0,state.rounds.length-1);
+scheduleSave();renderApp();
+}
+
+// ─── Player management ────────────────────────────────────────────────────────
+function addPlayer(){
+if(state.players.length>=MAX_PLAYERS)return;
+const n=state.players.length+1;
+state.players.push({name:“Player “+n,handicap:“10.0”});
+scheduleSave();renderApp();
+}
+function removePlayer(pi){
+if(state.players.length<=2){alert(“Minimum 2 players.”);return;}
+// Check if player has any scores
+const hasScores=state.scores.some(rs=>rs[pi]&&rs[pi].some(s=>s!==””));
+if(hasScores&&!confirm(“Player has scores entered. Remove anyway?”))return;
+state.players.splice(pi,1);
+// Remove from all team rosters and shift indices
+state.rounds.forEach(r=>{
+r.teams=r.teams.map(team=>team.filter(idx=>idx!==pi).map(idx=>idx>pi?idx-1:idx)).filter(t=>t.length>0);
+if(r.teams.length<2) r.teams.push([]); // keep at least 2 team slots
+});
+state.scores.forEach(rs=>rs.splice(pi,1));
+scheduleSave();renderApp();
+}
+
+// ─── Team pairing logic ───────────────────────────────────────────────────────
+// Each round has r.teams = array of 2+ arrays of player indices
+// We always use exactly 2 teams for best ball match play
+function getTeams(ri){return state.rounds[ri].teams||[[0,1],[2,3]];}
+
+function setPlayerTeam(ri,playerIdx,teamIdx){
+const r=state.rounds[ri];
+// Ensure 2 teams exist
+while(r.teams.length<2) r.teams.push([]);
+// Remove player from all teams
+r.teams=r.teams.map(t=>t.filter(p=>p!==playerIdx));
+// Add to target team (teamIdx -1 = sit out)
+if(teamIdx>=0){
+if(!r.teams[teamIdx]) r.teams[teamIdx]=[];
+r.teams[teamIdx].push(playerIdx);
+}
+scheduleSave();
+}
+
+// ─── Handicap / scoring ───────────────────────────────────────────────────────
 function calcCourseHcp(hcpIndex,slope,rating,totalPar){
-if(!state.useSlopeRating) return Math.round(parseFloat(hcpIndex)||0);
+if(!state.useSlopeRating)return Math.round(parseFloat(hcpIndex)||0);
 return Math.round((parseFloat(hcpIndex)||0)*((parseFloat(slope)||113)/113)+((parseFloat(rating)||totalPar)-totalPar));
 }
-function hcpStrokes(courseHcp,holeIdx){
-if(courseHcp<=0) return 0;
+function hcpStrokes(courseHcp,holeHcpIdx){
+if(courseHcp<=0)return 0;
 const full=Math.floor(courseHcp);
-return (holeIdx<=full?1:0)+((courseHcp-full>0&&holeIdx===1)?1:0);
+return (holeHcpIdx<=full?1:0)+((courseHcp-full>0&&holeHcpIdx===1)?1:0);
 }
 function getNet(ri,pi,hi){
-// Returns net score for a hole, or null if not entered
-const val=state.scores[ri][pi][hi];
-const g=parseInt(val); if(isNaN(g)||val===””) return null;
-if(state.netEntryMode) return g; // already net
+const val=state.scores[ri]?.[pi]?.[hi];
+const g=parseInt(val);if(isNaN(g)||!val)return null;
+if(state.netEntryMode)return g;
 const r=state.rounds[ri];
-const totalPar=r.pars.reduce((s,p)=>s+p,0);
-const cHcp=calcCourseHcp(state.players[pi].handicap,r.courseSlope,r.courseRating,totalPar);
-return g - hcpStrokes(cHcp,r.hcpIdx[hi]);
+const totalPar=r.pars.reduce((s,p)=>s+(parseInt(p)||0),0);
+const cHcp=calcCourseHcp(state.players[pi]?.handicap,r.courseSlope,r.courseRating,totalPar);
+return g-hcpStrokes(cHcp,parseInt(r.hcpIdx[hi])||0);
 }
 function getCourseHcps(ri){
 const r=state.rounds[ri];
-const totalPar=r.pars.reduce((s,p)=>s+p,0);
+const totalPar=r.pars.reduce((s,p)=>s+(parseInt(p)||0),0);
 return state.players.map(p=>calcCourseHcp(p.handicap,r.courseSlope,r.courseRating,totalPar));
 }
-function bestBall(ri,pair,hole){
-const nets=pair.map(pi=>getNet(ri,pi,hole));
+function bestBall(ri,team,hole){
+const nets=team.map(pi=>getNet(ri,pi,hole));
 const valid=nets.filter(n=>n!==null);
 return valid.length?Math.min(…valid):null;
 }
 function computeRound(ri){
 const r=state.rounds[ri];
+const teams=getTeams(ri);
+const t1=teams[0]||[],t2=teams[1]||[];
 const courseHcps=getCourseHcps(ri);
 let p1w=0,p2w=0,halves=0;
 const holes=[];
 for(let h=0;h<18;h++){
-const bb1=bestBall(ri,r.pair1,h);
-const bb2=bestBall(ri,r.pair2,h);
+const bb1=bestBall(ri,t1,h);
+const bb2=bestBall(ri,t2,h);
 let result=null;
 if(bb1!==null&&bb2!==null){
 if(bb1<bb2){result=“p1”;p1w++;}
 else if(bb2<bb1){result=“p2”;p2w++;}
 else{result=“halve”;halves++;}
 }
-holes.push({bb1,bb2,result,par:r.pars[h]});
+holes.push({bb1,bb2,result,par:parseInt(r.pars[h])||4});
 }
 const diff=p1w-p2w;
 const done=holes.filter(h=>h.result!==null);
 const parDone=done.reduce((s,h)=>s+h.par,0);
 const p1net=done.reduce((s,h)=>h.bb1!==null?s+h.bb1:s,0);
 const p2net=done.reduce((s,h)=>h.bb2!==null?s+h.bb2:s,0);
-return{holes,p1w,p2w,halves,
+return{holes,p1w,p2w,halves,t1,t2,
 leader:diff>0?“p1”:diff<0?“p2”:“none”,
 matchStr:diff===0?“A/S”:`${Math.abs(diff)} UP`,
-courseHcps,totalPar:r.pars.reduce((s,p)=>s+p,0),
+courseHcps,totalPar:r.pars.reduce((s,p)=>s+(parseInt(p)||0),0),
 p1diff:done.length?p1net-parDone:null,
 p2diff:done.length?p2net-parDone:null};
 }
 function computeOverall(){
-const pts=[0,0,0,0];
+const pts=Array(state.players.length).fill(0);
 const rounds=state.rounds.map((r,ri)=>{
 const rd=computeRound(ri);
-const has=r.pair1.some(pi=>state.scores[ri][pi].some(s=>s!==””))||r.pair2.some(pi=>state.scores[ri][pi].some(s=>s!==””));
-if(!has) return{…rd,w1:0,w2:0};
+const {t1,t2}=rd;
+const allPlaying=[…t1,…t2];
+const has=allPlaying.some(pi=>state.scores[ri]?.[pi]?.some(s=>s!==””));
+if(!has)return{…rd,w1:0,w2:0};
 let w1=0,w2=0;
-if(rd.leader===“p1”) w1=2; else if(rd.leader===“p2”) w2=2; else{w1=1;w2=1;}
-r.pair1.forEach(pi=>pts[pi]+=w1);
-r.pair2.forEach(pi=>pts[pi]+=w2);
+if(rd.leader===“p1”)w1=2;else if(rd.leader===“p2”)w2=2;else{w1=1;w2=1;}
+t1.forEach(pi=>{if(pi<pts.length)pts[pi]+=w1;});
+t2.forEach(pi=>{if(pi<pts.length)pts[pi]+=w2;});
 return{…rd,w1,w2};
 });
 return{pts,rounds};
@@ -191,15 +247,15 @@ return{pts,rounds};
 // ─── DOM helpers ──────────────────────────────────────────────────────────────
 function el(tag,attrs={},children=[]){
 const e=document.createElement(tag);
-for(const[k,v] of Object.entries(attrs)){
-if(k===“style”&&typeof v===“object”) Object.assign(e.style,v);
-else if(k.startsWith(“on”)&&typeof v===“function”) e.addEventListener(k.slice(2).toLowerCase(),v);
-else if(k===“className”) e.className=v;
+for(const[k,v]of Object.entries(attrs)){
+if(k===“style”&&typeof v===“object”)Object.assign(e.style,v);
+else if(k.startsWith(“on”)&&typeof v===“function”)e.addEventListener(k.slice(2).toLowerCase(),v);
+else if(k===“className”)e.className=v;
 else e.setAttribute(k,v);
 }
-for(const c of [children].flat()){
-if(c===null||c===undefined) continue;
-if(typeof c===“string”||typeof c===“number”) e.appendChild(document.createTextNode(String(c)));
+for(const c of[children].flat()){
+if(c===null||c===undefined)continue;
+if(typeof c===“string”||typeof c===“number”)e.appendChild(document.createTextNode(String(c)));
 else e.appendChild(c);
 }
 return e;
@@ -208,56 +264,47 @@ const div=(a,c)=>el(“div”,a,c);
 const span=(a,c)=>el(“span”,a,c);
 const btn=(a,c)=>el(“button”,a,c);
 const inp=a=>el(“input”,a,[]);
-
-function pcolor(i){return PCOLORS[i];}
+function pcolor(i){return PCOLORS[i%PCOLORS.length];}
 function playerDot(i,size=10){return div({style:{width:size+“px”,height:size+“px”,borderRadius:“50%”,background:pcolor(i),flexShrink:0}},[]);}
 function playerBadge(i){return div({style:{width:28,height:28,borderRadius:“50%”,background:pcolor(i)+“20”,border:`1.5px solid ${pcolor(i)}50`,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:12,fontWeight:800,color:pcolor(i),flexShrink:0}},[(i+1)+””]) }
 function diffLabel(diff){
-if(diff===null) return span({style:{color:”#4b5563”,fontSize:11}},[”—”]);
+if(diff===null)return span({style:{color:”#4b5563”,fontSize:11}},[”—”]);
 const color=diff<0?”#4ade80”:diff===0?”#9ab89a”:”#f97316”;
 return span({style:{color,fontWeight:700,fontSize:11}},[diff>0?`+${diff}`:diff+””]);
 }
 function toggleSwitch(checked,onChange){
 const label=el(“label”,{className:“toggle”},[]);
 const input=inp({type:“checkbox”});
-if(checked) input.setAttribute(“checked”,””);
 input.checked=checked;
 input.addEventListener(“change”,e=>onChange(e.target.checked));
 label.appendChild(input);
 label.appendChild(div({className:“toggle-slider”},[]));
 return label;
 }
-
-// Score input — colour reflects vs par (gross mode) or vs par directly (net mode)
 function scoreInput(ri,pi,hi){
-const val=state.scores[ri][pi][hi];
-const par=state.rounds[ri].pars[hi];
+const val=state.scores[ri]?.[pi]?.[hi]||””;
+const par=parseInt(state.rounds[ri].pars[hi])||4;
 const v=parseInt(val);
-// In net mode, colour directly vs par. In gross mode, colour gross vs par for visual feedback
 const diff=!isNaN(v)?v-par:null;
 let color=”#9ab89a”;
 if(diff!==null){
-if(diff<=-2) color=”#fbbf24”;
-else if(diff===-1) color=”#4ade80”;
-else if(diff===0) color=”#e8f5e8”;
-else if(diff===1) color=”#f97316”;
-else color=”#ef4444”;
+if(diff<=-2)color=”#fbbf24”;else if(diff===-1)color=”#4ade80”;
+else if(diff===0)color=”#e8f5e8”;else if(diff===1)color=”#f97316”;else color=”#ef4444”;
 }
 const input=inp({type:“text”,inputmode:“numeric”,pattern:”[0-9]*”,maxlength:“2”,value:val,
-className:“score-input”,style:{color,
-background:val?“rgba(74,222,128,0.08)”:“rgba(255,255,255,0.04)”,
+className:“score-input”,style:{color,background:val?“rgba(74,222,128,0.08)”:“rgba(255,255,255,0.04)”,
 border:`1px solid ${val?"rgba(74,222,128,0.25)":"rgba(255,255,255,0.07)"}`}});
 input.addEventListener(“input”,e=>{
 const cleaned=e.target.value.replace(/[^0-9]/g,””);
 e.target.value=cleaned;
+if(!state.scores[ri])state.scores[ri]=mkScoresForRound();
 state.scores[ri][pi][hi]=cleaned;
-scheduleSave();
-refreshScorecard();
+scheduleSave();refreshScorecard();
 });
 return input;
 }
 
-// ─── Setup ────────────────────────────────────────────────────────────────────
+// ─── Setup Screen ─────────────────────────────────────────────────────────────
 function renderSetup(){
 const wrap=div({style:{minHeight:“100vh”,background:”#0f1a0f”}},[]);
 wrap.appendChild(div({style:{display:“flex”,alignItems:“center”,justifyContent:“space-between”,padding:“12px 16px 0”}},[
@@ -269,38 +316,76 @@ btn({style:{border:“1px solid rgba(239,68,68,0.3)”,borderRadius:6,color:”#
 ]));
 
 if(state.setupStep===0){
-const inner=div({style:{padding:“28px 16px”,maxWidth:480,margin:“0 auto”}},[]);
-inner.appendChild(div({style:{textAlign:“center”,marginBottom:28}},[
-div({style:{fontSize:44,marginBottom:10}},[“⛳”]),
-el(“h1”,{style:{fontSize:28,fontWeight:900,color:”#4ade80”,letterSpacing:”-0.03em”,marginBottom:6}},[“Match Play Scorer”]),
+// ── Step 1: Players & Settings ──
+const inner=div({style:{padding:“24px 16px”,maxWidth:480,margin:“0 auto”}},[]);
+inner.appendChild(div({style:{textAlign:“center”,marginBottom:24}},[
+div({style:{fontSize:44,marginBottom:8}},[“⛳”]),
+el(“h1”,{style:{fontSize:26,fontWeight:900,color:”#4ade80”,letterSpacing:”-0.03em”,marginBottom:4}},[“Match Play Scorer”]),
 el(“p”,{style:{color:”#6b8f6b”,fontSize:13}},[“Step 1 of 2 — Players & Settings”]),
 ]));
 
 ```
-// Players
-const pcard=div({className:"card",style:{marginBottom:16}},[]);
-pcard.appendChild(div({className:"card-header"},[span({},[" PLAYERS & HANDICAP INDEX"])]));
+// Players card
+const pcard=div({className:"card",style:{marginBottom:14}},[]);
+pcard.appendChild(div({className:"card-header"},[
+  span({},[" PLAYERS & HANDICAP INDEX"]),
+  span({style:{fontSize:11,color:"#4b5563"}},[state.players.length+"/"+MAX_PLAYERS]),
+]));
 state.players.forEach((p,i)=>{
-  const row=div({style:{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",borderBottom:i<3?"1px solid #1a271a":"none"}},[]);
+  const row=div({style:{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderBottom:i<state.players.length-1?"1px solid #1a271a":"none"}},[]);
   row.appendChild(playerBadge(i));
   const nameIn=inp({type:"text",value:p.name,placeholder:`Player ${i+1}`,
-    style:{flex:1,background:"transparent",border:"none",color:"#e8f5e8",fontSize:15,fontWeight:600,outline:"none"}});
+    style:{flex:1,background:"transparent",border:"none",color:"#e8f5e8",fontSize:14,fontWeight:600,outline:"none"}});
   nameIn.addEventListener("input",e=>{state.players[i].name=e.target.value;scheduleSave();});
   row.appendChild(nameIn);
   row.appendChild(span({style:{fontSize:11,color:"#6b8f6b",marginRight:2}},["HCP"]));
   const hcpIn=inp({type:"text",inputmode:"decimal",pattern:"[0-9.]*",maxlength:"5",value:p.handicap,
-    style:{width:56,height:34,background:"rgba(255,255,255,0.05)",border:"1px solid #2a3d2a",borderRadius:6,color:"#4ade80",fontSize:14,fontWeight:700,textAlign:"center",outline:"none"}});
+    style:{width:52,height:32,background:"rgba(255,255,255,0.05)",border:"1px solid #2a3d2a",borderRadius:6,color:"#4ade80",fontSize:13,fontWeight:700,textAlign:"center",outline:"none"}});
   hcpIn.addEventListener("input",e=>{const v=e.target.value.replace(/[^0-9.]/g,"");e.target.value=v;state.players[i].handicap=v;scheduleSave();});
   row.appendChild(hcpIn);
+  // Remove player button
+  if(state.players.length>2){
+    row.appendChild(btn({style:{color:"#f87171",fontSize:16,padding:"0 4px",flexShrink:0},
+      onClick:()=>removePlayer(i)},["×"]));
+  }
   pcard.appendChild(row);
 });
+// Add player button
+if(state.players.length<MAX_PLAYERS){
+  pcard.appendChild(btn({style:{width:"100%",padding:"10px",color:"#4ade80",fontSize:13,fontWeight:700,
+    borderTop:"1px solid #1a271a",background:"rgba(74,222,128,0.04)"},
+    onClick:addPlayer},[`+ Add Player (${state.players.length}/${MAX_PLAYERS})`]));
+}
 inner.appendChild(pcard);
 
-// Scoring settings card
-const scard=div({className:"card",style:{marginBottom:28}},[]);
-scard.appendChild(div({className:"card-header"},[span({},[" SCORING SETTINGS"])]));
+// Rounds count card
+const rcard=div({className:"card",style:{marginBottom:14}},[]);
+rcard.appendChild(div({className:"card-header"},[span({},[" NUMBER OF ROUNDS"])]));
+const rcRow=div({style:{display:"flex",alignItems:"center",gap:10,padding:"12px 16px"}},[]);
+rcRow.appendChild(span({style:{fontSize:13,color:"#6b8f6b",flex:1}},["Rounds in tournament"]));
+// Stepper
+const stepRow=div({style:{display:"flex",alignItems:"center",gap:12}},[]);
+stepRow.appendChild(btn({style:{width:32,height:32,borderRadius:"50%",border:"1px solid #2a3d2a",color:"#6b8f6b",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"},
+  onClick:()=>{
+    if(state.rounds.length<=1)return;
+    removeRound(state.rounds.length-1);
+  }},["−"]));
+stepRow.appendChild(span({style:{fontSize:20,fontWeight:800,color:"#4ade80",minWidth:24,textAlign:"center"}},[state.rounds.length+""]));
+stepRow.appendChild(btn({style:{width:32,height:32,borderRadius:"50%",border:"1px solid #2a3d2a",color:"#6b8f6b",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"},
+  onClick:()=>{
+    if(state.rounds.length>=MAX_ROUNDS)return;
+    addRound();
+  }},["＋"]));
+rcRow.appendChild(stepRow);
+rcard.appendChild(rcRow);
+rcard.appendChild(div({style:{padding:"6px 16px 10px"}},[
+  span({style:{fontSize:11,color:"#4b5563"}},["You can also add/remove rounds from the Setup screen at any time."]),
+]));
+inner.appendChild(rcard);
 
-// Slope & Rating toggle
+// Scoring settings
+const scard=div({className:"card",style:{marginBottom:24}},[]);
+scard.appendChild(div({className:"card-header"},[span({},[" SCORING SETTINGS"])]));
 const srRow=div({className:"toggle-row"},[]);
 srRow.appendChild(div({},[
   div({style:{fontSize:14,fontWeight:700,color:"#e8f5e8",marginBottom:2}},["Use Slope & Rating"]),
@@ -308,21 +393,16 @@ srRow.appendChild(div({},[
 ]));
 srRow.appendChild(toggleSwitch(state.useSlopeRating,v=>{state.useSlopeRating=v;scheduleSave();renderApp();}));
 scard.appendChild(srRow);
-
-// Net entry mode toggle
 const nmRow=div({className:"toggle-row",style:{borderBottom:"none"}},[]);
 nmRow.appendChild(div({},[
   div({style:{fontSize:14,fontWeight:700,color:"#e8f5e8",marginBottom:2}},["Enter Net Scores Directly"]),
-  div({style:{fontSize:11,color:"#6b8f6b"}},[state.netEntryMode?"Type adjusted net score per hole":"Type gross score, app calculates net"]),
+  div({style:{fontSize:11,color:"#6b8f6b"}},[state.netEntryMode?"Type adjusted net score per hole":"Type gross, app calculates net"]),
 ]));
 nmRow.appendChild(toggleSwitch(state.netEntryMode,v=>{state.netEntryMode=v;scheduleSave();renderApp();}));
 scard.appendChild(nmRow);
-
-// Info box depending on current mode combo
-let modeNote="";
-if(state.netEntryMode) modeNote="You'll enter the pre-adjusted net score for each hole directly. No automatic handicap calculation.";
-else if(state.useSlopeRating) modeNote="Enter gross scores. Handicap strokes are auto-applied using slope, rating & hole index.";
-else modeNote="Enter gross scores. Handicap strokes are applied using your handicap index & hole index only (no slope/rating).";
+let modeNote=state.netEntryMode?"Enter pre-adjusted net score per hole. No automatic handicap calculation.":
+  state.useSlopeRating?"Enter gross scores. Strokes auto-applied using slope, rating & hole index.":
+  "Enter gross scores. Strokes applied using handicap index & hole index only.";
 scard.appendChild(div({style:{padding:"10px 16px",background:"rgba(96,165,250,0.05)",borderTop:"1px solid #1a271a"}},[
   span({style:{fontSize:11,color:"#60a5fa"}},[modeNote])
 ]));
@@ -333,163 +413,140 @@ wrap.appendChild(inner);
 ```
 
 } else {
-// Step 2 — rounds (same as before, just toggle slope/rating section based on useSlopeRating)
-const inner=div({style:{padding:“20px 16px”,maxWidth:520,margin:“0 auto”}},[]);
-inner.appendChild(div({style:{textAlign:“center”,marginBottom:20}},[
+// ── Step 2: Rounds ──
+const inner=div({style:{padding:“16px”,maxWidth:520,margin:“0 auto”}},[]);
+inner.appendChild(div({style:{textAlign:“center”,marginBottom:16}},[
 el(“p”,{style:{color:”#6b8f6b”,fontSize:13,marginBottom:4}},[“Step 2 of 2 — Rounds”]),
-el(“p”,{style:{color:”#4b5563”,fontSize:11}},[“Set course name, pairings & par per round”]),
+el(“p”,{style:{color:”#4b5563”,fontSize:11}},[“Configure each round’s course, pairings & hole data”]),
 ]));
 
 ```
 state.rounds.forEach((r,ri)=>{
   const rcard=div({className:"card",style:{marginBottom:14}},[]);
-  const rhead=div({style:{padding:"10px 16px",borderBottom:"1px solid #2a3d2a",background:"rgba(74,222,128,0.04)",display:"flex",alignItems:"center",gap:8}},[]);
-  const nameFields=div({style:{flex:1,display:"flex",flexDirection:"column",gap:5}},[]);
+
+  // Round header with course name + tee box
+  const rhead=div({style:{padding:"10px 14px",borderBottom:"1px solid #2a3d2a",background:"rgba(74,222,128,0.04)",display:"flex",alignItems:"center",gap:8}},[]);
+  const nameFields=div({style:{flex:1,display:"flex",flexDirection:"column",gap:4}},[]);
   const labelIn=inp({type:"text",value:r.label,placeholder:"Course name",
-    style:{background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,0.08)",color:"#e8f5e8",fontSize:15,fontWeight:800,outline:"none",paddingBottom:3}});
+    style:{background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,0.08)",color:"#e8f5e8",fontSize:14,fontWeight:800,outline:"none",paddingBottom:2}});
   labelIn.addEventListener("input",e=>{state.rounds[ri].label=e.target.value;scheduleSave();});
   const teeIn=inp({type:"text",value:r.teeBox||"",placeholder:"Tee box (e.g. Blue, White…)",
-    style:{background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,0.06)",color:"#9ab89a",fontSize:12,outline:"none",paddingBottom:2}});
+    style:{background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,0.06)",color:"#9ab89a",fontSize:11,outline:"none",paddingBottom:2}});
   teeIn.addEventListener("input",e=>{state.rounds[ri].teeBox=e.target.value;scheduleSave();});
   nameFields.appendChild(labelIn);
   nameFields.appendChild(teeIn);
   rhead.appendChild(nameFields);
-  rhead.appendChild(btn({style:{border:"1px solid #2a3d2a",borderRadius:6,color:"#6b8f6b",fontSize:11,fontWeight:700,padding:"4px 10px",flexShrink:0},
+  // Remove round button (only if >1 round)
+  if(state.rounds.length>1){
+    rhead.appendChild(btn({style:{color:"#f87171",fontSize:13,fontWeight:700,border:"1px solid rgba(239,68,68,0.3)",borderRadius:6,padding:"3px 8px",flexShrink:0},
+      onClick:()=>removeRound(ri)},["✕"]));
+  }
+  rhead.appendChild(btn({style:{border:"1px solid #2a3d2a",borderRadius:6,color:"#6b8f6b",fontSize:11,fontWeight:700,padding:"4px 8px",flexShrink:0},
     onClick:()=>{state.expandedRound=state.expandedRound===ri?null:ri;renderApp();}},
-    [state.expandedRound===ri?"Collapse ▲":"Edit ▼"]));
+    [state.expandedRound===ri?"▲":"▼"]));
   rcard.appendChild(rhead);
 
-  // Course name + tee box label under header
-  const courseLabel=div({style:{padding:"4px 16px 8px",display:"flex",gap:6,alignItems:"center",borderBottom:state.expandedRound===ri?"1px solid #2a3d2a":"none"}},[
-    span({style:{fontSize:12,fontWeight:700,color:"#e8f5e8"}},[r.label||"Unnamed Round"]),
-    ...(r.teeBox?[span({style:{fontSize:11,color:"#6b8f6b"}},["· "+r.teeBox])]:[] ),
-  ]);
-  rcard.appendChild(courseLabel);
-  // Pairing preview
-  const prev=div({style:{display:"flex",gap:8,padding:"6px 16px 10px",borderBottom:state.expandedRound===ri?"1px solid #2a3d2a":"none"}},[]);
-  [r.pair1,r.pair2].forEach((pair,pi)=>{
-    const box=div({style:{flex:1,padding:"7px 10px",borderRadius:8,
-      background:pi===0?"rgba(74,222,128,0.06)":"rgba(251,191,36,0.06)",
-      border:`1px solid ${pi===0?"rgba(74,222,128,0.2)":"rgba(251,191,36,0.2)"}`}},[]);
-    pair.forEach(idx=>box.appendChild(div({style:{fontSize:12,fontWeight:700,color:pcolor(idx),lineHeight:1.5}},[state.players[idx]?.name||`P${idx+1}`])));
+  // Team preview
+  const teams=getTeams(ri);
+  const prev=div({style:{display:"flex",gap:6,padding:"8px 14px",borderBottom:state.expandedRound===ri?"1px solid #2a3d2a":"none",flexWrap:"wrap"}},[]);
+  teams.forEach((team,ti)=>{
+    const box=div({style:{flex:1,minWidth:80,padding:"6px 8px",borderRadius:8,
+      background:ti===0?"rgba(74,222,128,0.06)":"rgba(251,191,36,0.06)",
+      border:`1px solid ${ti===0?"rgba(74,222,128,0.2)":"rgba(251,191,36,0.2)"}`}},[]);
+    box.appendChild(div({style:{fontSize:9,fontWeight:700,color:ti===0?"#4ade80":"#fbbf24",marginBottom:3,letterSpacing:"0.06em"}},["TEAM "+(ti===0?"A":"B")]));
+    if(team.length===0){
+      box.appendChild(div({style:{fontSize:11,color:"#4b5563",fontStyle:"italic"}},["Empty"]));
+    } else {
+      team.forEach(idx=>box.appendChild(div({style:{fontSize:11,fontWeight:700,color:pcolor(idx),lineHeight:1.4}},[state.players[idx]?.name||`P${idx+1}`])));
+    }
     prev.appendChild(box);
   });
+  // Sit-out indicator
+  const allInTeams=teams.flat();
+  const sittingOut=state.players.map((_,i)=>i).filter(i=>!allInTeams.includes(i));
+  if(sittingOut.length>0){
+    const sb=div({style:{padding:"4px 8px",borderRadius:8,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)"}},[]);
+    sb.appendChild(div({style:{fontSize:9,fontWeight:700,color:"#6b8f6b",marginBottom:3}},["SITTING OUT"]));
+    sittingOut.forEach(idx=>sb.appendChild(div({style:{fontSize:11,color:"#6b8f6b"}},[state.players[idx]?.name||`P${idx+1}`])));
+    prev.appendChild(sb);
+  }
   rcard.appendChild(prev);
 
   if(state.expandedRound===ri){
-    // Pairings
-    rcard.appendChild(div({style:{padding:"8px 16px",background:"rgba(74,222,128,0.03)",borderBottom:"1px solid #1a271a"}},[
-      span({style:{fontSize:11,fontWeight:700,color:"#6b8f6b",letterSpacing:"0.06em"}},["PAIRINGS"])
+    // ── Pairings ──
+    rcard.appendChild(div({style:{padding:"7px 14px",background:"rgba(74,222,128,0.03)",borderBottom:"1px solid #1a271a"}},[
+      span({style:{fontSize:11,fontWeight:700,color:"#6b8f6b",letterSpacing:"0.06em"}},["TEAM ASSIGNMENTS"])
     ]));
-    const slots=[
-      {team:0,idx:0,label:"Team A — Player 1",color:"#4ade80"},
-      {team:0,idx:1,label:"Team A — Player 2",color:"#4ade80"},
-      {team:1,idx:0,label:"Team B — Player 1",color:"#fbbf24"},
-      {team:1,idx:1,label:"Team B — Player 2",color:"#fbbf24"},
-    ];
-    slots.forEach(s=>{
-      const current=s.team===0?r.pair1[s.idx]:r.pair2[s.idx];
-      const row=div({style:{padding:"10px 16px",borderBottom:"1px solid #1a271a",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}},[]);
-      row.appendChild(div({style:{width:8,height:8,borderRadius:"50%",background:s.color,flexShrink:0}},[]));
-      row.appendChild(span({style:{fontSize:12,color:"#6b8f6b",minWidth:140}},[s.label]));
-      const btns=div({style:{display:"flex",gap:6,flexWrap:"wrap"}},[]);
-      state.players.forEach((p,pi)=>{
-        const isSel=current===pi;
-        btns.appendChild(btn({
-          style:{padding:"5px 11px",borderRadius:6,fontSize:12,fontWeight:700,
-            background:isSel?pcolor(pi)+"30":"rgba(255,255,255,0.07)",
-            color:isSel?pcolor(pi):"#6b8f6b",
-            outline:isSel?`1.5px solid ${pcolor(pi)}60`:"1px solid rgba(255,255,255,0.1)"},
-          onClick:()=>{setPairingSlot(ri,s.team,s.idx,pi);renderApp();}
-        },[p.name||`P${pi+1}`]));
-      });
-      row.appendChild(btns);
-      rcard.appendChild(row);
-    });
-    if(new Set([...r.pair1,...r.pair2]).size!==4){
-      rcard.appendChild(div({style:{padding:"8px 16px",background:"rgba(251,191,36,0.08)",borderTop:"1px solid #1a271a"}},[
-        span({style:{fontSize:11,color:"#fbbf24"}},["⚠ Each player must appear exactly once."])
-      ]));
-    }
+    rcard.appendChild(div({style:{padding:"8px 14px",borderBottom:"1px solid #1a271a"}},[
+      span({style:{fontSize:11,color:"#4b5563"}},["Tap a player to assign them to Team A, Team B, or sit out."])
+    ]));
 
-    // Course setup
-    rcard.appendChild(div({style:{padding:"8px 16px",background:"rgba(96,165,250,0.03)",borderTop:"1px solid #1a271a",borderBottom:"1px solid #1a271a"}},[
+    state.players.forEach((p,pi)=>{
+      const teams=getTeams(ri);
+      const inT1=teams[0].includes(pi);
+      const inT2=teams[1].includes(pi);
+      const sitOut=!inT1&&!inT2;
+      const prow=div({style:{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",borderBottom:"1px solid #1a271a"}},[]);
+      prow.appendChild(div({style:{width:24,height:24,borderRadius:"50%",background:pcolor(pi)+"20",border:`1.5px solid ${pcolor(pi)}50`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:pcolor(pi),flexShrink:0}},[(pi+1)+""]) );
+      prow.appendChild(span({style:{flex:1,fontSize:13,fontWeight:600,color:"#e8f5e8"}},[p.name]));
+      // Team A / Team B / Sit Out buttons
+      const choices=[["A",0,"#4ade80",inT1],["B",1,"#fbbf24",inT2],["—",-1,"#6b8f6b",sitOut]];
+      choices.forEach(([lbl,tidx,col,active])=>{
+        prow.appendChild(btn({
+          style:{padding:"4px 10px",borderRadius:6,fontSize:12,fontWeight:700,
+            background:active?col+"25":"rgba(255,255,255,0.05)",
+            color:active?col:"#4b5563",
+            outline:active?`1.5px solid ${col}60`:"1px solid rgba(255,255,255,0.08)"},
+          onClick:()=>{setPlayerTeam(ri,pi,tidx);renderApp();}
+        },[lbl]));
+      });
+      rcard.appendChild(prow);
+    });
+
+    // ── Course Setup ──
+    rcard.appendChild(div({style:{padding:"7px 14px",background:"rgba(96,165,250,0.03)",borderTop:"1px solid #1a271a",borderBottom:"1px solid #1a271a"}},[
       span({style:{fontSize:11,fontWeight:700,color:"#6b8f6b",letterSpacing:"0.06em"}},["COURSE SETUP"])
     ]));
-
-    const totalPar=r.pars.reduce((s,p)=>s+p,0);
-    const courseRow=div({style:{padding:"12px 16px",borderBottom:"1px solid #1a271a",display:"flex",gap:14,flexWrap:"wrap",alignItems:"center"}},[]);
-
-    // Only show slope/rating if toggle is on
+    const totalPar=r.pars.reduce((s,p)=>s+(parseInt(p)||0),0);
+    const courseRow=div({style:{padding:"10px 14px",borderBottom:"1px solid #1a271a",display:"flex",gap:12,flexWrap:"wrap",alignItems:"center"}},[]);
     if(state.useSlopeRating){
       [["Rating",r.courseRating,"courseRating",4],["Slope",r.courseSlope,"courseSlope",3]].forEach(([lbl,val,field,maxl])=>{
-        const g=div({style:{display:"flex",alignItems:"center",gap:6}},[]);
+        const g=div({style:{display:"flex",alignItems:"center",gap:5}},[]);
         g.appendChild(span({style:{fontSize:11,color:"#6b8f6b"}},[lbl]));
         const si=inp({type:"text",inputmode:"decimal",pattern:"[0-9.]*",maxlength:maxl+"",value:val,
-          style:{width:field==="courseRating"?"58px":"54px",height:30,background:"rgba(255,255,255,0.05)",border:"1px solid #2a3d2a",borderRadius:6,color:"#4ade80",fontSize:13,fontWeight:700,textAlign:"center",outline:"none"}});
+          style:{width:field==="courseRating"?"56px":"50px",height:28,background:"rgba(255,255,255,0.05)",border:"1px solid #2a3d2a",borderRadius:6,color:"#4ade80",fontSize:13,fontWeight:700,textAlign:"center",outline:"none"}});
         si.addEventListener("input",e=>{const v=e.target.value.replace(/[^0-9.]/g,"");e.target.value=v;state.rounds[ri][field]=v;scheduleSave();});
-        g.appendChild(si);
-        courseRow.appendChild(g);
+        g.appendChild(si);courseRow.appendChild(g);
       });
     }
-    courseRow.appendChild(div({style:{display:"flex",alignItems:"center",gap:6}},[
+    courseRow.appendChild(div({style:{display:"flex",alignItems:"center",gap:5}},[
       span({style:{fontSize:11,color:"#6b8f6b"}},["Total Par"]),
       span({style:{fontSize:13,fontWeight:700,color:"#9ab89a"}},[totalPar+""]),
     ]));
     rcard.appendChild(courseRow);
 
     // Hole grid
-    const grid=div({style:{padding:"10px 14px",overflowX:"auto"}},[]);
-
-    // Clear-all buttons row
-    const clearRow=div({style:{display:"flex",gap:8,marginBottom:8,flexWrap:"wrap"}},[]);
-    // Clear PAR — blanks all par values
-    clearRow.appendChild(btn({
-      style:{fontSize:11,fontWeight:700,color:"#9ab89a",background:"rgba(154,184,154,0.1)",border:"1px solid rgba(154,184,154,0.25)",borderRadius:6,padding:"4px 10px"},
-      onClick:()=>{state.rounds[ri].pars=Array(18).fill("");scheduleSave();renderApp();}
-    },["✕ Clear PAR"]));
-    // Reset PAR — restores defaults
-    clearRow.appendChild(btn({
-      style:{fontSize:11,fontWeight:700,color:"#9ab89a",background:"rgba(154,184,154,0.1)",border:"1px solid rgba(154,184,154,0.25)",borderRadius:6,padding:"4px 10px"},
-      onClick:()=>{state.rounds[ri].pars=[...DEFAULT_PARS];scheduleSave();renderApp();}
-    },["↺ Reset PAR"]));
-    // Clear HCP — blanks all hole index values to empty string so user can type fresh
+    const grid=div({style:{padding:"8px 12px",overflowX:"auto"}},[]);
+    const clearRow=div({style:{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}},[]);
+    clearRow.appendChild(btn({style:{fontSize:11,fontWeight:700,color:"#9ab89a",background:"rgba(154,184,154,0.1)",border:"1px solid rgba(154,184,154,0.25)",borderRadius:6,padding:"4px 8px"},
+      onClick:()=>{state.rounds[ri].pars=Array(18).fill("");scheduleSave();renderApp();}},["✕ Clear PAR"]));
+    clearRow.appendChild(btn({style:{fontSize:11,fontWeight:700,color:"#9ab89a",background:"rgba(154,184,154,0.1)",border:"1px solid rgba(154,184,154,0.25)",borderRadius:6,padding:"4px 8px"},
+      onClick:()=>{state.rounds[ri].pars=[...DEFAULT_PARS];scheduleSave();renderApp();}},["↺ Reset PAR"]));
     if(!state.netEntryMode){
-      clearRow.appendChild(btn({
-        style:{fontSize:11,fontWeight:700,color:"#60a5fa",background:"rgba(96,165,250,0.1)",border:"1px solid rgba(96,165,250,0.25)",borderRadius:6,padding:"4px 10px"},
-        onClick:()=>{state.rounds[ri].hcpIdx=Array(18).fill("");scheduleSave();renderApp();}
-      },["✕ Clear HCP"]));
-      clearRow.appendChild(btn({
-        style:{fontSize:11,fontWeight:700,color:"#6b8f6b",background:"rgba(107,143,107,0.1)",border:"1px solid rgba(107,143,107,0.25)",borderRadius:6,padding:"4px 10px"},
-        onClick:()=>{state.rounds[ri].hcpIdx=[...DEFAULT_HCP];scheduleSave();renderApp();}
-      },["↺ Reset HCP"]));
+      clearRow.appendChild(btn({style:{fontSize:11,fontWeight:700,color:"#60a5fa",background:"rgba(96,165,250,0.1)",border:"1px solid rgba(96,165,250,0.25)",borderRadius:6,padding:"4px 8px"},
+        onClick:()=>{state.rounds[ri].hcpIdx=Array(18).fill("");scheduleSave();renderApp();}},["✕ Clear HCP"]));
+      clearRow.appendChild(btn({style:{fontSize:11,fontWeight:700,color:"#6b8f6b",background:"rgba(107,143,107,0.1)",border:"1px solid rgba(107,143,107,0.25)",borderRadius:6,padding:"4px 8px"},
+        onClick:()=>{state.rounds[ri].hcpIdx=[...DEFAULT_HCP];scheduleSave();renderApp();}},["↺ Reset HCP"]));
     }
     grid.appendChild(clearRow);
 
-    // Build flat arrays of all 18 input elements for cross-row focus navigation
-    // allParInputs[0..17], allHcpInputs[0..17] — populated as rows are built
-    const allParInputs=[];
-    const allHcpInputs=[];
-
-    // Helper: after building both halves, wire up cross-half focus jump
-    // Called once after both halves rendered
-    function wireGridNavigation(){
-      // PAR: hole 9 (index 8 in front row) -> hole 10 (index 0 in back row)
-      // HCP: same
-      // Already handled within each half by row.querySelectorAll; we need to patch hole 9->10
-      // We do this by replacing the advance logic for the 9th input of each row
-      // Instead we just use allParInputs / allHcpInputs flat arrays directly
-    }
-
-    // HCP duplicate checker — returns Set of duplicate values across all 18
+    const allParInputs=[],allHcpInputs=[];
     function hcpDuplicates(){
       const vals=state.rounds[ri].hcpIdx.map(v=>parseInt(v)).filter(v=>!isNaN(v)&&v>=1&&v<=18);
-      const seen=new Set(), dups=new Set();
-      vals.forEach(v=>{ if(seen.has(v)) dups.add(v); else seen.add(v); });
+      const seen=new Set(),dups=new Set();
+      vals.forEach(v=>{if(seen.has(v))dups.add(v);else seen.add(v);});
       return dups;
     }
-
-    // Recolour HCP inputs to highlight duplicates — called after any HCP change
     function refreshHcpHighlights(){
       const dups=hcpDuplicates();
       allHcpInputs.forEach((inp,h)=>{
@@ -499,92 +556,84 @@ state.rounds.forEach((r,ri)=>{
         inp.style.background=isDup?"rgba(251,191,36,0.12)":"rgba(255,255,255,0.04)";
         inp.style.color=isDup?"#fbbf24":"#60a5fa";
       });
-      // Update/create duplicate warning banner
       let banner=grid.querySelector(".hcp-dup-banner");
       if(dups.size>0){
-        if(!banner){
-          banner=document.createElement("div");
-          banner.className="hcp-dup-banner";
-          Object.assign(banner.style,{padding:"6px 8px",background:"rgba(251,191,36,0.08)",borderRadius:6,
-            border:"1px solid rgba(251,191,36,0.3)",marginTop:4,fontSize:10,color:"#fbbf24",fontWeight:700});
-          grid.appendChild(banner);
-        }
-        banner.textContent="⚠ Duplicate HCP values: "+[...dups].sort((a,b)=>a-b).join(", ");
-      } else {
-        if(banner) banner.remove();
-      }
+        if(!banner){banner=document.createElement("div");banner.className="hcp-dup-banner";Object.assign(banner.style,{padding:"5px 8px",background:"rgba(251,191,36,0.08)",borderRadius:6,border:"1px solid rgba(251,191,36,0.3)",marginTop:4,fontSize:10,color:"#fbbf24",fontWeight:700});grid.appendChild(banner);}
+        banner.textContent="⚠ Duplicate HCP: "+[...dups].sort((a,b)=>a-b).join(", ");
+      }else{if(banner)banner.remove();}
     }
 
     [0,1].forEach(half=>{
-      grid.appendChild(div({style:{display:"grid",gridTemplateColumns:"30px repeat(9,1fr)",gap:3,marginBottom:3}},[
+      grid.appendChild(div({style:{display:"grid",gridTemplateColumns:"28px repeat(9,1fr)",gap:3,marginBottom:3}},[
         span({},[]),
         ...Array.from({length:9},(_,i)=>span({style:{fontSize:10,color:"#6b8f6b",textAlign:"center",fontWeight:700}},[(half*9+i+1)+""]))
       ]));
-      // Always show PAR row
       const parRows=[["PAR",r.pars,(h,v)=>{state.rounds[ri].pars[half*9+h]=v===""?"":parseInt(v)||state.rounds[ri].pars[half*9+h];scheduleSave();},"#9ab89a",allParInputs]];
-      // Only show HCP row if not in net entry mode
       if(!state.netEntryMode){
         parRows.push(["HCP",r.hcpIdx,(h,v)=>{state.rounds[ri].hcpIdx[half*9+h]=v===""?"":parseInt(v)||state.rounds[ri].hcpIdx[half*9+h];scheduleSave();refreshHcpHighlights();},"#60a5fa",allHcpInputs]);
       }
       parRows.forEach(([lbl,vals,fn,col,allInputs])=>{
         const isPar=lbl==="PAR";
-        const row=div({style:{display:"grid",gridTemplateColumns:"30px repeat(9,1fr)",gap:3,marginBottom:3}},[
+        const row=div({style:{display:"grid",gridTemplateColumns:"28px repeat(9,1fr)",gap:3,marginBottom:3}},[
           span({style:{fontSize:9,color:"#6b8f6b",textAlign:"center",alignSelf:"center",fontWeight:700}},[lbl])
         ]);
         vals.slice(half*9,half*9+9).forEach((v,i)=>{
           const gi=inp({type:"text",inputmode:"numeric",pattern:"[0-9]*",maxlength:"2",value:v+"",
             style:{width:"100%",height:28,background:"rgba(255,255,255,0.04)",border:"1px solid #2a3d2a",borderRadius:5,color:col,fontSize:12,fontWeight:700,textAlign:"center",outline:"none"}});
           allInputs.push(gi);
+          let hcpAdvanceTimer=null;
           gi.addEventListener("input",e=>{
             let nv=e.target.value.replace(/[^0-9]/g,"");
-            // PAR: only allow 3, 4, 5
-            if(isPar && nv!==""){
-              const num=parseInt(nv);
-              if(num<3||num>5){ e.target.value=""; return; }
-            }
-            // HCP: only allow 1-18
-            if(!isPar && nv!==""){
-              const num=parseInt(nv);
-              if(nv.length===2 && (num<1||num>18)){ nv=nv.slice(0,1); }
-            }
-            e.target.value=nv;
-            fn(i,nv);
-            if(nv==="") return;
+            if(isPar&&nv!==""){const num=parseInt(nv);if(num<3||num>5){e.target.value="";return;}}
+            if(!isPar&&nv!==""){const num=parseInt(nv);if(nv.length===2&&(num<1||num>18)){nv=nv.slice(0,1);}}
+            e.target.value=nv;fn(i,nv);
+            if(nv===""){clearTimeout(hcpAdvanceTimer);return;}
             const num=parseInt(nv);
-            // Advance logic:
-            // PAR: 1 digit always (only 3/4/5 valid)
-            // HCP: immediately if 2-9; wait for 2nd digit if starts with 1 (could be 10-18)
-            const shouldAdvance = isPar
-              ? nv.length===1
-              : (nv.length===2||(nv.length===1&&num>=2&&num<=9));
-            if(shouldAdvance){
-              // Use flat allInputs array so hole 9 -> hole 10 works seamlessly
+            // Cancel any pending delayed advance
+            clearTimeout(hcpAdvanceTimer);
+            const advance=()=>{
               const flatIdx=allInputs.indexOf(gi);
-              if(flatIdx!==-1&&flatIdx<allInputs.length-1){
-                allInputs[flatIdx+1].focus();
-                allInputs[flatIdx+1].select();
-              }
+              if(flatIdx!==-1&&flatIdx<allInputs.length-1){allInputs[flatIdx+1].focus();allInputs[flatIdx+1].select();}
+            };
+            if(isPar){
+              // PAR: always advance immediately on 1 digit
+              advance();
+            } else if(nv.length===2){
+              // HCP: 2 digits — advance immediately
+              advance();
+            } else if(num>=2&&num<=9){
+              // HCP 2-9: advance immediately (can't be start of valid 2-digit number)
+              advance();
+            } else if(num===1){
+              // HCP "1": could be 1, 10-18 — wait 800ms then advance
+              hcpAdvanceTimer=setTimeout(advance,800);
             }
           });
+          // If user leaves the field (blur), cancel any pending timer and commit
+          gi.addEventListener("blur",()=>clearTimeout(hcpAdvanceTimer));
           row.appendChild(gi);
         });
         grid.appendChild(row);
       });
-      if(half===0) grid.appendChild(div({style:{height:6}},[]));
+      if(half===0)grid.appendChild(div({style:{height:5}},[]));
     });
-
-    // Apply initial HCP duplicate highlights on render
-    if(!state.netEntryMode) refreshHcpHighlights();
-
     if(!state.netEntryMode){
-      grid.appendChild(div({style:{padding:"6px 8px",background:"rgba(96,165,250,0.06)",borderRadius:6,border:"1px solid rgba(96,165,250,0.15)",marginTop:4}},[
-        span({style:{fontSize:10,color:"#60a5fa"}},["HCP = Hole handicap index (1–18, 1 = hardest). Duplicates highlighted in yellow."])
+      refreshHcpHighlights();
+      grid.appendChild(div({style:{padding:"5px 6px",background:"rgba(96,165,250,0.06)",borderRadius:6,border:"1px solid rgba(96,165,250,0.15)",marginTop:4}},[
+        span({style:{fontSize:10,color:"#60a5fa"}},["HCP = Hole index (1–18, 1=hardest). Duplicates highlighted yellow."])
       ]));
     }
     rcard.appendChild(grid);
   }
   inner.appendChild(rcard);
 });
+
+// Add round button
+if(state.rounds.length<MAX_ROUNDS){
+  inner.appendChild(btn({style:{width:"100%",padding:"12px",marginBottom:14,color:"#4ade80",fontSize:13,fontWeight:700,
+    border:"1px dashed rgba(74,222,128,0.3)",borderRadius:12,background:"rgba(74,222,128,0.04)"},
+    onClick:addRound},[`+ Add Round (${state.rounds.length}/${MAX_ROUNDS})`]));
+}
 
 inner.appendChild(div({style:{display:"flex",gap:10,marginBottom:24}},[
   btn({className:"btn-secondary",style:{flex:1},onClick:()=>{state.setupStep=0;renderApp();}},["← Back"]),
@@ -595,18 +644,6 @@ wrap.appendChild(inner);
 
 }
 return wrap;
-}
-
-function setPairingSlot(ri,team,slotIdx,playerIdx){
-const r=state.rounds[ri];
-let p1=[…r.pair1],p2=[…r.pair2];
-const inP1=p1.indexOf(playerIdx),inP2=p2.indexOf(playerIdx);
-const displaced=team===0?p1[slotIdx]:p2[slotIdx];
-if(inP1!==-1) p1[inP1]=displaced;
-if(inP2!==-1) p2[inP2]=displaced;
-if(team===0) p1[slotIdx]=playerIdx; else p2[slotIdx]=playerIdx;
-state.rounds[ri].pair1=p1; state.rounds[ri].pair2=p2;
-scheduleSave();
 }
 
 // ─── Home ─────────────────────────────────────────────────────────────────────
@@ -622,9 +659,8 @@ div({style:{fontSize:15,fontWeight:800,color:”#4ade80”}},[“Match Play Scor
 span({className:“save-status”,style:{fontSize:10,fontWeight:700,marginLeft:6}},[]),
 ]),
 div({style:{fontSize:11,color:”#6b8f6b”}},[
-state.netEntryMode?“Net Entry Mode”:“Gross Entry” ,
-“ · “,
-state.useSlopeRating&&!state.netEntryMode?“Slope/Rating On”:“Index Only”,
+state.netEntryMode?“Net Entry”:state.useSlopeRating?“Slope/Rating On”:“Index Only”,
+“ · “+state.players.length+” players · “+state.rounds.length+” rounds”,
 ]),
 ]),
 ]));
@@ -645,40 +681,43 @@ return wrap;
 }
 
 function renderLeaderboard(){
-const {pts,rounds:rds}=computeOverall();
+const{pts,rounds:rds}=computeOverall();
 const ranked=[…state.players.map((p,i)=>({…p,idx:i,pts:pts[i]}))].sort((a,b)=>b.pts-a.pts);
-const wrap=div({style:{padding:“16px”,maxWidth:500,margin:“0 auto”}},[]);
-wrap.appendChild(div({style:{textAlign:“center”,marginBottom:20}},[
+const wrap=div({style:{padding:“14px”,maxWidth:500,margin:“0 auto”}},[]);
+wrap.appendChild(div({style:{textAlign:“center”,marginBottom:16}},[
 div({style:{fontSize:11,fontWeight:700,color:”#6b8f6b”,letterSpacing:“0.08em”,marginBottom:4}},[“OVERALL STANDINGS”]),
-div({style:{fontSize:11,color:”#4b5563”}},[“Win = 2 pts · Halve = 1 pt · Loss = 0 pts”]),
+div({style:{fontSize:11,color:”#4b5563”}},[“Win=2pts · Halve=1pt · Loss=0pts”]),
 ]));
-const card=div({className:“card”,style:{marginBottom:24}},[]);
+const card=div({className:“card”,style:{marginBottom:20}},[]);
 ranked.forEach((p,rank)=>{
 const isLead=rank===0&&p.pts>0;
-const row=div({style:{display:“flex”,alignItems:“center”,gap:12,padding:“14px 16px”,
-borderBottom:rank<3?“1px solid #1a271a”:“none”,background:isLead?“rgba(251,191,36,0.03)”:“transparent”}},[]);
-row.appendChild(div({style:{width:26,height:26,borderRadius:“50%”,flexShrink:0,
+const row=div({style:{display:“flex”,alignItems:“center”,gap:10,padding:“12px 14px”,
+borderBottom:rank<ranked.length-1?“1px solid #1a271a”:“none”,
+background:isLead?“rgba(251,191,36,0.03)”:“transparent”}},[]);
+row.appendChild(div({style:{width:24,height:24,borderRadius:“50%”,flexShrink:0,
 background:isLead?“rgba(251,191,36,0.2)”:“rgba(255,255,255,0.04)”,
-display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:13,fontWeight:800,color:isLead?”#fbbf24”:”#6b8f6b”}},[(rank+1)+””]))
+display:“flex”,alignItems:“center”,justifyContent:“center”,
+fontSize:12,fontWeight:800,color:isLead?”#fbbf24”:”#6b8f6b”}},[(rank+1)+””]))
 row.appendChild(playerDot(p.idx));
 row.appendChild(div({style:{flex:1}},[
-div({style:{fontSize:15,fontWeight:700,color:”#e8f5e8”}},[p.name]),
+div({style:{fontSize:14,fontWeight:700,color:”#e8f5e8”}},[p.name]),
 div({style:{fontSize:11,color:”#6b8f6b”}},[“HCP “+p.handicap]),
 ]));
-const tiles=div({style:{display:“flex”,gap:4}},[]);
+const tiles=div({style:{display:“flex”,gap:3}},[]);
 state.rounds.forEach((r,ri)=>{
-const has=r.pair1.some(pi=>state.scores[ri][pi].some(s=>s!==””))||r.pair2.some(pi=>state.scores[ri][pi].some(s=>s!==””));
-const isp1=r.pair1.includes(p.idx),isp2=r.pair2.includes(p.idx);
+const teams=getTeams(ri);
+const inT1=teams[0].includes(p.idx),inT2=teams[1].includes(p.idx);
+const has=[…teams[0],…teams[1]].some(pi=>state.scores[ri]?.[pi]?.some(s=>s!==””));
 let tpts=null;
-if(has&&(isp1||isp2)) tpts=isp1?rds[ri].w1:rds[ri].w2;
+if(has&&(inT1||inT2))tpts=inT1?rds[ri].w1:rds[ri].w2;
 const tc=tpts===2?“rgba(74,222,128,0.15)”:tpts===1?“rgba(148,163,184,0.1)”:tpts===0&&tpts!==null?“rgba(239,68,68,0.1)”:“rgba(255,255,255,0.04)”;
 const bc=tpts===2?“rgba(74,222,128,0.3)”:tpts===1?“rgba(148,163,184,0.2)”:tpts===0&&tpts!==null?“rgba(239,68,68,0.2)”:“rgba(255,255,255,0.06)”;
 const fc=tpts===2?”#4ade80”:tpts===1?”#94a3b8”:tpts===0&&tpts!==null?”#f87171”:”#4b5563”;
-tiles.appendChild(div({style:{width:22,height:22,borderRadius:4,background:tc,border:`1px solid ${bc}`,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:11,fontWeight:800,color:fc}},[tpts!==null?tpts+””:”·”]));
+tiles.appendChild(div({style:{width:20,height:20,borderRadius:4,background:tc,border:`1px solid ${bc}`,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:10,fontWeight:800,color:fc}},[tpts!==null?tpts+””:”·”]));
 });
 row.appendChild(tiles);
-row.appendChild(div({style:{textAlign:“right”,minWidth:40}},[
-div({style:{fontSize:26,fontWeight:900,color:pcolor(p.idx),lineHeight:1}},[(p.pts)+””]),
+row.appendChild(div({style:{textAlign:“right”,minWidth:36}},[
+div({style:{fontSize:24,fontWeight:900,color:pcolor(p.idx),lineHeight:1}},[(p.pts)+””]),
 div({style:{fontSize:10,color:”#6b8f6b”}},[“pts”]),
 ]));
 card.appendChild(row);
@@ -687,33 +726,35 @@ wrap.appendChild(card);
 wrap.appendChild(div({style:{fontSize:11,fontWeight:700,color:”#6b8f6b”,letterSpacing:“0.08em”,marginBottom:10}},[“ROUND RESULTS”]));
 state.rounds.forEach((r,ri)=>{
 const rd=rds[ri];
-const has=r.pair1.some(pi=>state.scores[ri][pi].some(s=>s!==””));
+const{t1,t2}=rd;
+const has=[…t1,…t2].some(pi=>state.scores[ri]?.[pi]?.some(s=>s!==””));
 const rc=div({className:“card”,style:{marginBottom:10}},[]);
-const rh=div({style:{display:“flex”,alignItems:“center”,justifyContent:“space-between”,padding:“10px 14px”,borderBottom:“1px solid #1a271a”,background:“rgba(74,222,128,0.03)”}},[]);
+const rh=div({style:{display:“flex”,alignItems:“center”,justifyContent:“space-between”,padding:“9px 12px”,borderBottom:“1px solid #1a271a”,background:“rgba(74,222,128,0.03)”}},[]);
 rh.appendChild(div({},[
-div({style:{fontSize:13,fontWeight:700,color:”#e8f5e8”}},[r.label]),
-div({style:{fontSize:10,color:”#4b5563”}},[((state.useSlopeRating&&!state.netEntryMode?“Rating “+r.courseRating+” · Slope “+r.courseSlope:state.netEntryMode?“Net Entry”:“Index Only”)+(r.teeBox?” · “+r.teeBox:””))+(r.teeBox?” · “+r.teeBox:””)]),
+div({style:{fontSize:13,fontWeight:700,color:”#e8f5e8”}},[r.label+(r.teeBox?” — “+r.teeBox:””)]),
+div({style:{fontSize:10,color:”#4b5563”}},[(state.useSlopeRating&&!state.netEntryMode?“Rating “+r.courseRating+” · Slope “+r.courseSlope:state.netEntryMode?“Net Entry”:“Index Only”)]),
 ]));
 rh.appendChild(btn({style:{background:“rgba(74,222,128,0.1)”,border:“1px solid rgba(74,222,128,0.2)”,borderRadius:6,color:”#4ade80”,fontSize:11,fontWeight:700,padding:“4px 10px”},
 onClick:()=>{state.activeRound=ri;state.screen=“scorecard”;renderApp();}},
 [has?“Edit”:“Score”]));
 rc.appendChild(rh);
-const rb=div({style:{padding:“12px 14px”}},[]);
-[r.pair1,r.pair2].forEach((pair,pi)=>{
-const pr=div({style:{display:“flex”,alignItems:“center”,justifyContent:“space-between”,marginBottom:pi===0?6:0}},[]);
-const pnames=div({style:{flex:1}},[]);
-pair.forEach(idx=>pnames.appendChild(span({style:{fontSize:13,fontWeight:600,color:pcolor(idx),marginRight:6}},[state.players[idx].name.split(” “)[0]])));
+const rb=div({style:{padding:“10px 12px”}},[]);
+[[t1,”#4ade80”,“p1”],[t2,”#fbbf24”,“p2”]].forEach(([team,col,side],ti)=>{
+const pr=div({style:{display:“flex”,alignItems:“center”,justifyContent:“space-between”,marginBottom:ti===0?5:0}},[]);
+const pnames=div({style:{flex:1,display:“flex”,flexWrap:“wrap”,gap:4}},[]);
+if(team.length===0){pnames.appendChild(span({style:{fontSize:12,color:”#4b5563”}},[”(empty)”]));}
+else team.forEach(idx=>pnames.appendChild(span({style:{fontSize:12,fontWeight:600,color:pcolor(idx)}},[state.players[idx]?.name.split(” “)[0]||”?”])));
 pr.appendChild(pnames);
-const pright=div({style:{display:“flex”,alignItems:“center”,gap:8}},[]);
-if(has) pright.appendChild(diffLabel(pi===0?rd.p1diff:rd.p2diff));
-const won=has?(pi===0?rd.p1w:rd.p2w):null;
-const isWin=has&&rd.leader===(pi===0?“p1”:“p2”);
-pright.appendChild(span({style:{fontSize:18,fontWeight:900,width:22,textAlign:“right”,color:isWin?pi===0?”#4ade80”:”#fbbf24”:”#6b8f6b”}},[won!==null?won+””:”—”]));
+const pright=div({style:{display:“flex”,alignItems:“center”,gap:6}},[]);
+if(has)pright.appendChild(diffLabel(side===“p1”?rd.p1diff:rd.p2diff));
+const won=has?(side===“p1”?rd.p1w:rd.p2w):null;
+const isWin=has&&rd.leader===side;
+pright.appendChild(span({style:{fontSize:17,fontWeight:900,width:20,textAlign:“right”,color:isWin?col:”#6b8f6b”}},[won!==null?won+””:”—”]));
 pr.appendChild(pright);
 rb.appendChild(pr);
 });
-if(has) rb.appendChild(div({style:{marginTop:8,paddingTop:8,borderTop:“1px solid #1a271a”,display:“flex”,justifyContent:“space-between”}},[
-span({style:{fontSize:11,color:”#6b8f6b”}},[rd.halves+” holes halved”]),
+if(has)rb.appendChild(div({style:{marginTop:6,paddingTop:6,borderTop:“1px solid #1a271a”,display:“flex”,justifyContent:“space-between”}},[
+span({style:{fontSize:11,color:”#6b8f6b”}},[rd.halves+” halved”]),
 span({style:{fontSize:12,fontWeight:700,color:rd.leader===“none”?”#94a3b8”:rd.leader===“p1”?”#4ade80”:”#fbbf24”}},[rd.leader===“none”?“All Square”:rd.matchStr]),
 ]));
 rc.appendChild(rb);
@@ -723,25 +764,29 @@ return wrap;
 }
 
 function renderRoundsList(){
-const wrap=div({style:{padding:“16px”,maxWidth:500,margin:“0 auto”}},[]);
+const wrap=div({style:{padding:“14px”,maxWidth:500,margin:“0 auto”}},[]);
 state.rounds.forEach((r,ri)=>{
 const rd=computeRound(ri);
-const has=r.pair1.some(pi=>state.scores[ri][pi].some(s=>s!==””));
-const rb=btn({style:{display:“block”,width:“100%”,textAlign:“left”,background:”#1c2a1c”,border:“1px solid #2a3d2a”,borderRadius:14,padding:“16px”,marginBottom:12,color:”#e8f5e8”},
+const{t1,t2}=rd;
+const has=[…t1,…t2].some(pi=>state.scores[ri]?.[pi]?.some(s=>s!==””));
+const rb=btn({style:{display:“block”,width:“100%”,textAlign:“left”,background:”#1c2a1c”,border:“1px solid #2a3d2a”,borderRadius:14,padding:“14px”,marginBottom:10,color:”#e8f5e8”},
 onClick:()=>{state.activeRound=ri;state.screen=“scorecard”;renderApp();}});
-const rh=div({style:{display:“flex”,justifyContent:“space-between”,alignItems:“center”,marginBottom:10}},[]);
+const rh=div({style:{display:“flex”,justifyContent:“space-between”,alignItems:“center”,marginBottom:8}},[]);
 rh.appendChild(div({},[
-div({style:{fontSize:15,fontWeight:800}},[r.label]),
-div({style:{fontSize:10,color:”#4b5563”}},[(state.useSlopeRating&&!state.netEntryMode?“Rating “+r.courseRating+” · Slope “+r.courseSlope:state.netEntryMode?“Net Entry”:“Index Only”)+(r.teeBox?” · “+r.teeBox:””)]),
+div({style:{fontSize:14,fontWeight:800}},[r.label+(r.teeBox?” — “+r.teeBox:””)]),
+div({style:{fontSize:10,color:”#4b5563”}},[(state.useSlopeRating&&!state.netEntryMode?“Rating “+r.courseRating+” · Slope “+r.courseSlope:state.netEntryMode?“Net Entry”:“Index Only”)]),
 ]));
 rh.appendChild(has?span({style:{fontSize:12,fontWeight:700,color:rd.leader===“none”?”#94a3b8”:rd.leader===“p1”?”#4ade80”:”#fbbf24”}},[rd.leader===“none”?“A/S”:rd.matchStr]):
 span({style:{fontSize:11,color:”#4ade80”,background:“rgba(74,222,128,0.1)”,padding:“3px 8px”,borderRadius:5}},[“Not Started”]));
 rb.appendChild(rh);
-const pairs=div({style:{display:“flex”,gap:8}},[]);
-[r.pair1,r.pair2].forEach((pair,pi)=>{
-const pb=div({style:{flex:1,padding:“8px 10px”,borderRadius:8,background:pi===0?“rgba(74,222,128,0.05)”:“rgba(251,191,36,0.05)”,border:`1px solid ${pi===0?"rgba(74,222,128,0.15)":"rgba(251,191,36,0.15)"}`}},[]);
-pair.forEach(idx=>pb.appendChild(div({style:{fontSize:12,fontWeight:600,color:pcolor(idx)}},[state.players[idx].name])));
-if(has) pb.appendChild(div({style:{fontSize:11,color:”#6b8f6b”,marginTop:3}},[(pi===0?rd.p1w:rd.p2w)+” holes won”]));
+const pairs=div({style:{display:“flex”,gap:6}},[]);
+[[t1,”#4ade80”,rd.p1w],[t2,”#fbbf24”,rd.p2w]].forEach(([team,col,won],ti)=>{
+const pb=div({style:{flex:1,padding:“6px 8px”,borderRadius:8,
+background:ti===0?“rgba(74,222,128,0.05)”:“rgba(251,191,36,0.05)”,
+border:`1px solid ${ti===0?"rgba(74,222,128,0.15)":"rgba(251,191,36,0.15)"}`}},[]);
+if(team.length===0)pb.appendChild(div({style:{fontSize:11,color:”#4b5563”,fontStyle:“italic”}},[“Empty”]));
+else team.forEach(idx=>pb.appendChild(div({style:{fontSize:11,fontWeight:600,color:pcolor(idx)}},[state.players[idx]?.name||`P${idx+1}`])));
+if(has)pb.appendChild(div({style:{fontSize:10,color:”#6b8f6b”,marginTop:2}},[won+” holes won”]));
 pairs.appendChild(pb);
 });
 rb.appendChild(pairs);
@@ -760,67 +805,63 @@ inner.appendChild(buildScorecardContent(state.activeRound));
 wrap.appendChild(inner);
 return wrap;
 }
-
 function buildScorecardContent(ri){
 const r=state.rounds[ri];
 const rd=computeRound(ri);
-const pairs=[r.pair1,r.pair2];
+const{t1,t2,courseHcps}=rd;
+const pairs=[t1,t2];
 const root=div({},[]);
 
-// Grid template depends on mode — in net mode we hide HCP column sub-label but keep same columns
-const cols=“22px 24px 1fr 1fr 34px 1fr 1fr”;
+// Dynamic grid columns based on team sizes
+const t1cols=t1.length||1;
+const t2cols=t2.length||1;
+const cols=`22px 24px repeat(${t1cols},1fr) 34px repeat(${t2cols},1fr)`;
 
-// Sticky header
 const diff=rd.p1w-rd.p2w;
-const sLabel=diff===0&&rd.p1w===0?“Not Started”:diff===0?“All Square”:`${(diff>0?r.pair1:r.pair2).map(i=>state.players[i].name.split(" ")[0]).join(" & ")} ${Math.abs(diff)} UP`;
+const sLabel=diff===0&&rd.p1w===0?“Not Started”:diff===0?“All Square”:
+`${(diff>0?t1:t2).map(i=>state.players[i]?.name.split(" ")[0]||"?").join("&")} ${Math.abs(diff)} UP`;
 const sColor=diff===0&&rd.p1w===0?”#6b8f6b”:diff===0?”#94a3b8”:diff>0?”#4ade80”:”#fbbf24”;
 
-const head=div({style:{position:“sticky”,top:0,zIndex:10,background:”#0f1a0f”,borderBottom:“1px solid #2a3d2a”,padding:“12px 14px 10px”}},[]);
-const htop=div({style:{display:“flex”,alignItems:“center”,gap:10,marginBottom:10}},[]);
+// Header
+const head=div({style:{position:“sticky”,top:0,zIndex:10,background:”#0f1a0f”,borderBottom:“1px solid #2a3d2a”,padding:“10px 12px 8px”}},[]);
+const htop=div({style:{display:“flex”,alignItems:“center”,gap:10,marginBottom:8}},[]);
 htop.appendChild(btn({style:{color:”#6b8f6b”,fontSize:22,padding:0,lineHeight:1},onClick:()=>{state.screen=“home”;renderApp();}},[“←”]));
 htop.appendChild(div({style:{flex:1}},[
-div({style:{fontSize:16,fontWeight:800,color:”#e8f5e8”}},[r.label]),
+div({style:{fontSize:15,fontWeight:800,color:”#e8f5e8”}},[r.label+(r.teeBox?” — “+r.teeBox:””)]),
 div({style:{fontSize:11,color:”#6b8f6b”}},[
-state.netEntryMode?(“Entering net scores directly”+(r.teeBox?” · “+r.teeBox:””)):
-state.useSlopeRating?`Rating ${r.courseRating} · Slope ${r.courseSlope} · Par ${rd.totalPar}`+(r.teeBox?” · “+r.teeBox:””):`Index Handicap · Par ${rd.totalPar}`+(r.teeBox?” · “+r.teeBox:””)
+state.netEntryMode?“Net scores”:state.useSlopeRating?`Rating ${r.courseRating} · Slope ${r.courseSlope} · Par ${rd.totalPar}`:`Index HCP · Par ${rd.totalPar}`
 ]),
 ]));
-htop.appendChild(div({style:{fontSize:13,fontWeight:700,color:sColor,textAlign:“right”}},[sLabel]));
+htop.appendChild(div({style:{fontSize:12,fontWeight:700,color:sColor,textAlign:“right”}},[sLabel]));
 head.appendChild(htop);
-
 const pairBoxes=div({style:{display:“flex”,gap:6}},[]);
-pairs.forEach((pair,pi)=>{
-const pb=div({style:{flex:1,padding:“7px 10px”,borderRadius:8,
+pairs.forEach((team,pi)=>{
+const pb=div({style:{flex:1,padding:“6px 8px”,borderRadius:8,
 background:pi===0?“rgba(74,222,128,0.07)”:“rgba(251,191,36,0.07)”,
 border:`1px solid ${pi===0?"rgba(74,222,128,0.2)":"rgba(251,191,36,0.2)"}`}},[]);
-pair.forEach(idx=>{
-const hcpText=state.netEntryMode?””:`(cHCP ${rd.courseHcps[idx]})`;
-pb.appendChild(div({style:{fontSize:12,fontWeight:700,color:pcolor(idx),lineHeight:1.5}},[
-state.players[idx].name+(hcpText?” “:””)+hcpText
-]));
-});
+if(team.length===0)pb.appendChild(div({style:{fontSize:11,color:”#4b5563”,fontStyle:“italic”}},[“Empty team”]));
+else team.forEach(idx=>pb.appendChild(div({style:{fontSize:11,fontWeight:700,color:pcolor(idx),lineHeight:1.4}},[
+state.players[idx]?.name+(state.netEntryMode?””:” (cHCP “+courseHcps[idx]+”)”)
+])));
 pairBoxes.appendChild(pb);
 });
 head.appendChild(pairBoxes);
 root.appendChild(head);
 
-// Scorecard body
-const body=div({style:{padding:“10px 12px”}},[]);
-
-// Mode indicator badge
+const body=div({style:{padding:“8px 10px”}},[]);
 if(state.netEntryMode){
-body.appendChild(div({style:{marginBottom:8,padding:“6px 10px”,background:“rgba(96,165,250,0.08)”,borderRadius:6,border:“1px solid rgba(96,165,250,0.2)”,textAlign:“center”}},[
-span({style:{fontSize:11,color:”#60a5fa”,fontWeight:700}},[“Entering pre-adjusted NET scores per hole”])
+body.appendChild(div({style:{marginBottom:6,padding:“5px 8px”,background:“rgba(96,165,250,0.08)”,borderRadius:6,border:“1px solid rgba(96,165,250,0.2)”,textAlign:“center”}},[
+span({style:{fontSize:11,color:”#60a5fa”,fontWeight:700}},[“Entering NET scores per hole”])
 ]));
 }
 
 // Column headers
-const hdr=div({style:{display:“grid”,gridTemplateColumns:cols,gap:3,marginBottom:5,padding:“0 2px”}},[
+const hdr=div({style:{display:“grid”,gridTemplateColumns:cols,gap:3,marginBottom:4,padding:“0 2px”}},[
 span({style:{fontSize:9,color:”#6b8f6b”,textAlign:“center”,fontWeight:700}},[“H”]),
 span({style:{fontSize:9,color:”#6b8f6b”,textAlign:“center”,fontWeight:700}},[“PAR”]),
-…pairs[0].map(pi=>span({style:{fontSize:9,color:pcolor(pi),textAlign:“center”,fontWeight:800}},[state.players[pi].name.split(” “)[0].slice(0,5)])),
+…t1.map(pi=>span({style:{fontSize:9,color:pcolor(pi),textAlign:“center”,fontWeight:800}},[state.players[pi]?.name.split(” “)[0].slice(0,5)||”?”])),
 span({style:{fontSize:9,color:”#6b8f6b”,textAlign:“center”,fontWeight:700}},[“RES”]),
-…pairs[1].map(pi=>span({style:{fontSize:9,color:pcolor(pi),textAlign:“center”,fontWeight:800}},[state.players[pi].name.split(” “)[0].slice(0,5)])),
+…t2.map(pi=>span({style:{fontSize:9,color:pcolor(pi),textAlign:“center”,fontWeight:800}},[state.players[pi]?.name.split(” “)[0].slice(0,5)||”?”])),
 ]);
 body.appendChild(hdr);
 
@@ -830,70 +871,60 @@ const h=half*9+i;
 const hd=rd.holes[h];
 const bg=hd.result===“p1”?“rgba(74,222,128,0.06)”:hd.result===“p2”?“rgba(251,191,36,0.06)”:hd.result===“halve”?“rgba(148,163,184,0.04)”:“transparent”;
 const br=hd.result===“p1”?“rgba(74,222,128,0.15)”:hd.result===“p2”?“rgba(251,191,36,0.15)”:hd.result===“halve”?“rgba(148,163,184,0.1)”:“transparent”;
-const row=div({style:{display:“grid”,gridTemplateColumns:cols,gap:3,padding:“4px 2px”,borderRadius:6,marginBottom:2,background:bg,border:`1px solid ${br}`}},[
+const row=div({style:{display:“grid”,gridTemplateColumns:cols,gap:3,padding:“3px 2px”,borderRadius:6,marginBottom:2,background:bg,border:`1px solid ${br}`}},[
 div({style:{textAlign:“center”,alignSelf:“center”}},[
 div({style:{fontSize:11,fontWeight:700,color:”#6b8f6b”}},[(h+1)+””]),
-// Only show HCP index if not in net entry mode
 …(!state.netEntryMode?[div({style:{fontSize:8,color:”#4b5563”}},[r.hcpIdx[h]+””])]:[]),
 ]),
 div({style:{textAlign:“center”,fontSize:12,fontWeight:700,color:”#9ab89a”,alignSelf:“center”}},[r.pars[h]+””]),
-…pairs[0].map(pi=>div({style:{display:“flex”,justifyContent:“center”}},[scoreInput(ri,pi,h)])),
+…t1.map(pi=>div({style:{display:“flex”,justifyContent:“center”}},[scoreInput(ri,pi,h)])),
 div({style:{textAlign:“center”,alignSelf:“center”}},[
 hd.result?span({style:{fontSize:11,fontWeight:800,color:hd.result===“p1”?”#4ade80”:hd.result===“p2”?”#fbbf24”:”#94a3b8”}},[hd.result===“halve”?“½”:“W”]):
 span({style:{color:”#2a3d2a”,fontSize:10}},[”·”]),
 ]),
-…pairs[1].map(pi=>div({style:{display:“flex”,justifyContent:“center”}},[scoreInput(ri,pi,h)])),
+…t2.map(pi=>div({style:{display:“flex”,justifyContent:“center”}},[scoreInput(ri,pi,h)])),
 ]);
 body.appendChild(row);
 }
-
-```
 // Subtotals
-const sub=div({style:{display:"grid",gridTemplateColumns:cols,gap:3,padding:"6px 2px 8px",borderRadius:6,background:"rgba(74,222,128,0.04)",border:"1px solid #2a3d2a",marginBottom:8}},[
-  div({style:{gridColumn:"1/3",textAlign:"center",fontSize:11,fontWeight:800,color:"#6b8f6b",alignSelf:"center"}},[half===0?"OUT":"IN"]),
+const sub=div({style:{display:“grid”,gridTemplateColumns:cols,gap:3,padding:“5px 2px 7px”,borderRadius:6,background:“rgba(74,222,128,0.04)”,border:“1px solid #2a3d2a”,marginBottom:7}},[
+div({style:{gridColumn:“1/3”,textAlign:“center”,fontSize:11,fontWeight:800,color:”#6b8f6b”,alignSelf:“center”}},[half===0?“OUT”:“IN”]),
 ]);
-pairs[0].forEach(pi=>{
-  const sl=state.scores[ri][pi].slice(half*9,half*9+9);
-  const gross=sl.reduce((s,v)=>s+(parseInt(v)||0),0);
-  const net=state.netEntryMode?gross:sl.reduce((s,v,i)=>{const n=getNet(ri,pi,half*9+i);return n!==null?s+n:s;},0);
-  const has=sl.some(v=>v!=="");
-  sub.appendChild(div({style:{textAlign:"center",fontSize:13,fontWeight:800,color:"#e8f5e8",alignSelf:"center"}},[
-    has?gross+"":"—",
-    ...(!state.netEntryMode&&has?[el("span",{style:{fontSize:9,color:"#6b8f6b"}},["("+net+")"])]:[]),
-  ]));
+[t1,t2].forEach(team=>{
+team.forEach(pi=>{
+const sl=state.scores[ri]?.[pi]?.slice(half*9,half*9+9)||[];
+const gross=sl.reduce((s,v)=>s+(parseInt(v)||0),0);
+const net=state.netEntryMode?gross:sl.reduce((s,v,i)=>{const n=getNet(ri,pi,half*9+i);return n!==null?s+n:s;},0);
+const has=sl.some(v=>v!==””);
+sub.appendChild(div({style:{textAlign:“center”,fontSize:12,fontWeight:800,color:”#e8f5e8”,alignSelf:“center”}},[
+has?gross+””:”—”,
+…(!state.netEntryMode&&has?[el(“span”,{style:{fontSize:8,color:”#6b8f6b”}},[”(”+net+”)”])]:[]),
+]));
+if(team===t1&&t1===sub.children[sub.children.length-t1.length]){} // spacer handled by grid
 });
-const p1h=rd.holes.slice(half*9,half*9+9).filter(h=>h.result==="p1").length;
-const p2h=rd.holes.slice(half*9,half*9+9).filter(h=>h.result==="p2").length;
-sub.appendChild(div({style:{textAlign:"center",fontSize:11,fontWeight:700,color:"#6b8f6b",alignSelf:"center"}},[p1h+"-"+p2h]));
-pairs[1].forEach(pi=>{
-  const sl=state.scores[ri][pi].slice(half*9,half*9+9);
-  const gross=sl.reduce((s,v)=>s+(parseInt(v)||0),0);
-  const net=state.netEntryMode?gross:sl.reduce((s,v,i)=>{const n=getNet(ri,pi,half*9+i);return n!==null?s+n:s;},0);
-  const has=sl.some(v=>v!=="");
-  sub.appendChild(div({style:{textAlign:"center",fontSize:13,fontWeight:800,color:"#e8f5e8",alignSelf:"center"}},[
-    has?gross+"":"—",
-    ...(!state.netEntryMode&&has?[el("span",{style:{fontSize:9,color:"#6b8f6b"}},["("+net+")"])]:[]),
-  ]));
+if(team===t1){
+const p1h=rd.holes.slice(half*9,half*9+9).filter(h=>h.result===“p1”).length;
+const p2h=rd.holes.slice(half*9,half*9+9).filter(h=>h.result===“p2”).length;
+sub.appendChild(div({style:{textAlign:“center”,fontSize:11,fontWeight:700,color:”#6b8f6b”,alignSelf:“center”}},[p1h+”-”+p2h]));
+}
 });
 body.appendChild(sub);
-```
-
 });
 
 // Match summary
-const summary=div({style:{padding:“14px”,background:“rgba(74,222,128,0.05)”,borderRadius:12,border:“1px solid #2a3d2a”}},[]);
+const summary=div({style:{padding:“12px”,background:“rgba(74,222,128,0.05)”,borderRadius:12,border:“1px solid #2a3d2a”}},[]);
 summary.appendChild(div({style:{display:“flex”,justifyContent:“space-between”,alignItems:“center”,marginBottom:10}},[
 span({style:{fontSize:11,fontWeight:700,color:”#6b8f6b”}},[“MATCH RESULT”]),
-span({style:{fontSize:14,fontWeight:800,color:sColor}},[sLabel]),
+span({style:{fontSize:13,fontWeight:800,color:sColor}},[sLabel]),
 ]));
 const sg=div({style:{display:“grid”,gridTemplateColumns:“1fr auto 1fr”,gap:8,alignItems:“center”}},[]);
-[[r.pair1,”#4ade80”,rd.p1w,rd.p1diff],[r.pair2,”#fbbf24”,rd.p2w,rd.p2diff]].forEach(([pair,col,won,pdiff],pi)=>{
+[[t1,”#4ade80”,rd.p1w,rd.p1diff],[t2,”#fbbf24”,rd.p2w,rd.p2diff]].forEach(([team,col,won,pdiff],pi)=>{
 sg.appendChild(div({style:{textAlign:“center”}},[
-div({style:{fontSize:11,color:col,marginBottom:3}},[pair.map(i=>state.players[i].name.split(” “)[0]).join(” & “)]),
-div({style:{fontSize:24,fontWeight:900,color:col,lineHeight:1}},[won+””]),
+div({style:{fontSize:11,color:col,marginBottom:2}},[team.map(i=>state.players[i]?.name.split(” “)[0]||”?”).join(” & “)||”(empty)”]),
+div({style:{fontSize:22,fontWeight:900,color:col,lineHeight:1}},[won+””]),
 div({style:{fontSize:11,color:”#6b8f6b”,marginTop:2}},[diffLabel(pdiff),” net”]),
 ]));
-if(pi===0) sg.appendChild(div({style:{textAlign:“center”}},[
+if(pi===0)sg.appendChild(div({style:{textAlign:“center”}},[
 div({style:{fontSize:12,color:”#4b5563”}},[“vs”]),
 div({style:{fontSize:10,color:”#4b5563”,marginTop:2}},[rd.halves+” halved”]),
 ]));
@@ -903,21 +934,21 @@ body.appendChild(summary);
 root.appendChild(body);
 return root;
 }
-
 function refreshScorecard(){
-if(state.screen!==“scorecard”||!scorecardRoot) return;
+if(state.screen!==“scorecard”||!scorecardRoot)return;
 const inner=scorecardRoot.querySelector(“div”);
 if(inner){inner.innerHTML=””;inner.appendChild(buildScorecardContent(state.activeRound));}
 }
 
 // ─── Reset ────────────────────────────────────────────────────────────────────
 function handleReset(){
-if(!confirm(“Reset all tournament data? This cannot be undone.”)) return;
+if(!confirm(“Reset all data? This cannot be undone.”))return;
 try{localStorage.removeItem(STORAGE_KEY);}catch(e){}
 state.players=[{name:“Player 1”,handicap:“10.4”},{name:“Player 2”,handicap:“14.2”},{name:“Player 3”,handicap:“8.1”},{name:“Player 4”,handicap:“18.7”}];
-state.rounds=mkRounds(); state.scores=mkScores();
-state.screen=“setup”; state.setupStep=0; state.saveStatus=“idle”;
-state.netEntryMode=false; state.useSlopeRating=true;
+state.rounds=[mkRound(1),mkRound(2),mkRound(3)];
+state.scores=[mkScoresForRound(),mkScoresForRound(),mkScoresForRound()];
+state.screen=“setup”;state.setupStep=0;state.saveStatus=“idle”;
+state.netEntryMode=false;state.useSlopeRating=true;
 renderApp();
 }
 
@@ -926,13 +957,12 @@ function renderApp(){
 const app=document.getElementById(“app”);
 app.innerHTML=””;
 let content;
-if(state.screen===“setup”) content=renderSetup();
-else if(state.screen===“scorecard”) content=renderScorecard();
+if(state.screen===“setup”)content=renderSetup();
+else if(state.screen===“scorecard”)content=renderScorecard();
 else content=renderHome();
 app.appendChild(content);
 renderSaveStatus();
 }
-
 loadState();
 renderApp();
 </script>
