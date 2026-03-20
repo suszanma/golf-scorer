@@ -47,7 +47,17 @@ const STORAGE_KEY="golf-scorer-v4";
 const MAX_PLAYERS=8;
 const MAX_ROUNDS=6;
 
-// ─── Default makers ───────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+// Select all text on focus so user can type immediately without highlighting first
+function selectOnFocus(input){
+  input.addEventListener("focus",e=>{
+    // Timeout needed on iOS Safari — selection must happen after focus event settles
+    setTimeout(()=>e.target.select(),50);
+  });
+  return input;
+}
+
+// ─── Default makers ─────────────────────────────────────────────────────────────
 function mkRound(n){
   return {label:"Round "+n,teeBox:"",courseRating:"72.0",courseSlope:"113",
     teams:[[0,1],[2,3]],  // array of arrays; each inner array is one team
@@ -74,41 +84,109 @@ let state={
   scores:[mkScoresForRound(),mkScoresForRound(),mkScoresForRound()],
 };
 
-// ─── Storage ──────────────────────────────────────────────────────────────────
+// ─── Storage — Firebase Realtime Database + localStorage fallback ─────────────
+const FB_URL="https://golf-scorer-8a6de-default-rtdb.firebaseio.com/tournament.json";
 let saveTimer=null;
-function loadState(){
+let fbListener=null; // tracks active EventSource for live sync
+
+// Build the payload object to save
+function buildPayload(){
+  return {
+    players:state.players,rounds:state.rounds,scores:state.scores,
+    netEntryMode:state.netEntryMode,useSlopeRating:state.useSlopeRating
+  };
+}
+
+// Apply a loaded data object to state (used by both loadState and live sync)
+function applyData(s){
+  if(!s)return;
+  if(s.players) state.players=s.players;
+  if(s.rounds)  state.rounds=s.rounds.map(r=>({teeBox:"",teams:[[0,1],[2,3]],...r}));
+  if(s.scores)  state.scores=s.scores;
+  if(s.netEntryMode!==undefined) state.netEntryMode=s.netEntryMode;
+  if(s.useSlopeRating!==undefined) state.useSlopeRating=s.useSlopeRating;
+  while(state.scores.length<state.rounds.length) state.scores.push(mkScoresForRound());
+}
+
+// Load on startup — try Firebase first, fall back to localStorage
+async function loadState(){
+  // Always apply localStorage immediately so app is usable offline
   try{
     const raw=localStorage.getItem(STORAGE_KEY);
-    if(!raw)return;
-    const s=JSON.parse(raw);
-    if(s.players) state.players=s.players;
-    if(s.rounds)  state.rounds=s.rounds.map(r=>({teeBox:"",teams:[[0,1],[2,3]],...r}));
-    if(s.scores)  state.scores=s.scores;
-    if(s.netEntryMode!==undefined) state.netEntryMode=s.netEntryMode;
-    if(s.useSlopeRating!==undefined) state.useSlopeRating=s.useSlopeRating;
-    // Ensure scores array matches round count
-    while(state.scores.length<state.rounds.length) state.scores.push(mkScoresForRound());
+    if(raw) applyData(JSON.parse(raw));
+  }catch(e){}
+
+  // Then try Firebase for the latest shared data
+  try{
+    state.saveStatus="saving";renderSaveStatus(); // show loading indicator
+    const res=await fetch(FB_URL);
+    if(res.ok){
+      const data=await res.json();
+      if(data){
+        applyData(data);
+        // Mirror latest Firebase data into localStorage
+        try{localStorage.setItem(STORAGE_KEY,JSON.stringify(buildPayload()));}catch(e){}
+      }
+    }
+    state.saveStatus="idle";renderSaveStatus();
+  }catch(e){
+    // Offline — already loaded from localStorage above
+    state.saveStatus="idle";renderSaveStatus();
+  }
+
+  // Start live sync listener (Firebase SSE)
+  startLiveSync();
+}
+
+// Live sync — Firebase Realtime Database streams changes via Server-Sent Events
+function startLiveSync(){
+  try{
+    // EventSource gives us real-time push updates when any other device saves
+    const es=new EventSource(FB_URL.replace(".json","")+"/.json");
+    es.addEventListener("put",e=>{
+      try{
+        const msg=JSON.parse(e.data);
+        if(msg&&msg.data){
+          applyData(msg.data);
+          try{localStorage.setItem(STORAGE_KEY,JSON.stringify(buildPayload()));}catch(ex){}
+          renderApp(); // re-render with latest data from any device
+        }
+      }catch(ex){}
+    });
+    es.onerror=()=>es.close(); // silently close on error (e.g. offline)
+    fbListener=es;
   }catch(e){}
 }
+
+// Save to Firebase + localStorage
 function scheduleSave(){
   clearTimeout(saveTimer);
   state.saveStatus="saving";renderSaveStatus();
-  saveTimer=setTimeout(()=>{
+  saveTimer=setTimeout(async ()=>{
+    const payload=buildPayload();
+    // Always save to localStorage immediately (works offline)
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(payload));}catch(e){}
+    // Then push to Firebase
     try{
-      localStorage.setItem(STORAGE_KEY,JSON.stringify({
-        players:state.players,rounds:state.rounds,scores:state.scores,
-        netEntryMode:state.netEntryMode,useSlopeRating:state.useSlopeRating
-      }));
-      state.saveStatus="saved";
-    }catch(e){state.saveStatus="error";}
+      const res=await fetch(FB_URL,{
+        method:"PUT",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+      });
+      state.saveStatus=res.ok?"saved":"error";
+    }catch(e){
+      // Offline — saved to localStorage only
+      state.saveStatus="saved"; // treat local save as success
+    }
     renderSaveStatus();
     setTimeout(()=>{state.saveStatus="idle";renderSaveStatus();},2000);
   },600);
 }
+
 function renderSaveStatus(){
   document.querySelectorAll(".save-status").forEach(el=>{
     if(state.saveStatus==="idle"){el.textContent="";return;}
-    const c={saving:{t:"Saving…",c:"#6b8f6b"},saved:{t:"✓ Saved",c:"#4ade80"},error:{t:"⚠ Failed",c:"#f87171"}}[state.saveStatus];
+    const c={saving:{t:"Syncing…",c:"#6b8f6b"},saved:{t:"✓ Synced",c:"#4ade80"},error:{t:"⚠ Sync failed",c:"#f87171"}}[state.saveStatus];
     el.textContent=c.t;el.style.color=c.c;
   });
 }
@@ -374,8 +452,8 @@ function renderSetup(){
     state.players.forEach((p,i)=>{
       const row=div({style:{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderBottom:i<state.players.length-1?"1px solid #1a271a":"none"}},[]);
       row.appendChild(playerBadge(i));
-      const nameIn=inp({type:"text",value:p.name,placeholder:`Player ${i+1}`,
-        style:{flex:1,background:"transparent",border:"none",color:"#e8f5e8",fontSize:14,fontWeight:600,outline:"none"}});
+      const nameIn=selectOnFocus(inp({type:"text",value:p.name,placeholder:`Player ${i+1}`,
+        style:{flex:1,background:"transparent",border:"none",color:"#e8f5e8",fontSize:14,fontWeight:600,outline:"none"}}));
       nameIn.addEventListener("input",e=>{state.players[i].name=e.target.value;scheduleSave();});
       row.appendChild(nameIn);
       row.appendChild(span({style:{fontSize:11,color:"#6b8f6b",marginRight:2}},["HCP"]));
@@ -465,11 +543,11 @@ function renderSetup(){
       // Round header with course name + tee box
       const rhead=div({style:{padding:"10px 14px",borderBottom:"1px solid #2a3d2a",background:"rgba(74,222,128,0.04)",display:"flex",alignItems:"center",gap:8}},[]);
       const nameFields=div({style:{flex:1,display:"flex",flexDirection:"column",gap:4}},[]);
-      const labelIn=inp({type:"text",value:r.label,placeholder:"Course name",
-        style:{background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,0.08)",color:"#e8f5e8",fontSize:14,fontWeight:800,outline:"none",paddingBottom:2}});
+      const labelIn=selectOnFocus(inp({type:"text",value:r.label,placeholder:"Course name",
+        style:{background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,0.08)",color:"#e8f5e8",fontSize:14,fontWeight:800,outline:"none",paddingBottom:2}}));
       labelIn.addEventListener("input",e=>{state.rounds[ri].label=e.target.value;scheduleSave();});
-      const teeIn=inp({type:"text",value:r.teeBox||"",placeholder:"Tee box (e.g. Blue, White…)",
-        style:{background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,0.06)",color:"#9ab89a",fontSize:11,outline:"none",paddingBottom:2}});
+      const teeIn=selectOnFocus(inp({type:"text",value:r.teeBox||"",placeholder:"Tee box (e.g. Blue, White…)",
+        style:{background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,0.06)",color:"#9ab89a",fontSize:11,outline:"none",paddingBottom:2}}));
       teeIn.addEventListener("input",e=>{state.rounds[ri].teeBox=e.target.value;scheduleSave();});
       nameFields.appendChild(labelIn);
       nameFields.appendChild(teeIn);
@@ -1059,8 +1137,10 @@ function refreshScorecard(focusPi,focusHi){
 }
 
 // ─── Reset ────────────────────────────────────────────────────────────────────
-function doReset(){
+async function doReset(){
   try{localStorage.removeItem(STORAGE_KEY);}catch(e){}
+  // Clear Firebase too
+  try{await fetch(FB_URL,{method:"PUT",headers:{"Content-Type":"application/json"},body:"null"});}catch(e){}
   state.players=[{name:"Player 1",handicap:"10.4"},{name:"Player 2",handicap:"14.2"},{name:"Player 3",handicap:"8.1"},{name:"Player 4",handicap:"18.7"}];
   state.rounds=[mkRound(1),mkRound(2),mkRound(3)];
   state.scores=[mkScoresForRound(),mkScoresForRound(),mkScoresForRound()];
@@ -1101,8 +1181,14 @@ function renderApp(){
   app.appendChild(content);
   renderSaveStatus();
 }
-loadState();
-renderApp();
+// Show a loading screen while Firebase data loads
+(async()=>{
+  // Render immediately with localStorage data (fast, works offline)
+  renderApp();
+  // Then load from Firebase and re-render with latest shared data
+  await loadState();
+  renderApp();
+})();
 </script>
 </body>
 </html>
