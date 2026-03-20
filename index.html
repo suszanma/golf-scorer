@@ -900,6 +900,77 @@ function renderLeaderboard(){
     rc.appendChild(rb);
     wrap.appendChild(rc);
   });
+
+  // ── Share / QR button ────────────────────────────────────────────────────────
+  const APP_URL="https://suszanma.github.io/golf-scorer/";
+  const shareSection=div({style:{margin:"20px 0 8px",textAlign:"center"}},[]);
+  shareSection.appendChild(btn({
+    style:{padding:"12px 24px",borderRadius:12,border:"1px solid rgba(74,222,128,0.3)",
+      background:"rgba(74,222,128,0.06)",color:"#4ade80",fontSize:14,fontWeight:700,
+      display:"inline-flex",alignItems:"center",gap:8},
+    onClick:()=>showQRModal(APP_URL)
+  },[
+    span({style:{fontSize:18}},["⬡"]),
+    span({},[" Share Scorer"]),
+  ]));
+  shareSection.appendChild(div({style:{fontSize:11,color:"#4b5563",marginTop:6}},["Tap to share the scoreboard URL & QR code"]));
+  wrap.appendChild(shareSection);
+
+  // ── Version history footer ────────────────────────────────────────────────────
+  const versions=[
+    {v:"v1.0",  desc:"Basic 4-player stroke play scorer"},
+    {v:"v1.1",  desc:"Match play format, hole-by-hole W/L/½"},
+    {v:"v1.2",  desc:"Best ball, round-robin pairings, handicap index"},
+    {v:"v1.3",  desc:"Course rating & slope, full handicap calculation"},
+    {v:"v1.4",  desc:"Decimal handicap index (e.g. 10.4)"},
+    {v:"v1.5",  desc:"Custom pairings per round, editable round names"},
+    {v:"v1.6",  desc:"Course setup: editable par & hole HCP index"},
+    {v:"v1.7",  desc:"Tee box name field, slope/rating toggle"},
+    {v:"v1.8",  desc:"Net score entry mode toggle"},
+    {v:"v1.9",  desc:"Numeric keypad for all number inputs"},
+    {v:"v2.0",  desc:"localStorage auto-save, standalone HTML (no dependencies)"},
+    {v:"v2.1",  desc:"Auto-advance on par & HCP entry, PAR validation (3–5 only)"},
+    {v:"v2.2",  desc:"HCP duplicate highlighting, cross-half auto-advance"},
+    {v:"v2.3",  desc:"Clear/Reset buttons for PAR & HCP rows"},
+    {v:"v2.4",  desc:"1–8 players, 1–6 rounds, variable team sizes, sit-outs"},
+    {v:"v2.5",  desc:"Win=1pt, Halve=0.5pt points system"},
+    {v:"v2.6",  desc:"Larger back button, restyled Setup & Reset buttons"},
+    {v:"v2.7",  desc:"In-app confirmation modal (replaces iOS-blocked confirm())"},
+    {v:"v2.8",  desc:"Select-all on focus for name & course inputs"},
+    {v:"v2.9",  desc:"Auto-advance score entry across players and holes"},
+    {v:"v3.0",  desc:"Firebase Realtime Database — live shared scoring across devices"},
+    {v:"v3.1",  desc:"Share button with QR code, version history footer"},
+  ];
+
+  const vwrap=div({style:{margin:"24px 0 32px",padding:"0 4px"}},[]);
+  const vheader=div({style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,cursor:"pointer"},
+    onClick:()=>{
+      const vlist=vwrap.querySelector(".vlist");
+      if(vlist)vlist.style.display=vlist.style.display==="none"?"block":"none";
+    }
+  },[
+    span({style:{fontSize:11,fontWeight:700,color:"#4b5563",letterSpacing:"0.08em"}},["VERSION HISTORY"]),
+    span({style:{fontSize:11,color:"#4b5563"}},["▾"]),
+  ]);
+  vwrap.appendChild(vheader);
+  const vlist=div({className:"vlist",style:{display:"none"}},[]);
+  [...versions].reverse().forEach((ver,i)=>{
+    const isLatest=i===0;
+    vlist.appendChild(div({style:{
+      display:"flex",gap:10,padding:"7px 0",
+      borderBottom:i<versions.length-1?"1px solid #1a271a":"none",
+      alignItems:"flex-start"
+    }},[
+      span({style:{fontSize:11,fontWeight:800,color:isLatest?"#4ade80":"#4b5563",
+        minWidth:36,flexShrink:0,lineHeight:1.6}},[ver.v]),
+      span({style:{fontSize:11,color:isLatest?"#9ab89a":"#4b5563",lineHeight:1.6}},[ver.desc]),
+      ...(isLatest?[span({style:{fontSize:9,fontWeight:700,color:"#4ade80",background:"rgba(74,222,128,0.12)",
+        border:"1px solid rgba(74,222,128,0.3)",borderRadius:4,padding:"1px 5px",flexShrink:0,alignSelf:"center"}},["CURRENT"])]:[] ),
+    ]));
+  });
+  vwrap.appendChild(vlist);
+  wrap.appendChild(vwrap);
+
   return wrap;
 }
 
@@ -1148,6 +1219,41 @@ async function doReset(){
   state.netEntryMode=false;state.useSlopeRating=true;
   renderApp();
 }
+function showQRModal(url){
+  const overlay=div({className:"modal-overlay"},[]);
+  const box=div({className:"modal-box"},[]);
+  box.appendChild(div({style:{fontSize:15,fontWeight:800,color:"#4ade80",marginBottom:4}},["⛳ Share Scorer"]));
+  box.appendChild(div({style:{fontSize:11,color:"#6b8f6b",marginBottom:16}},["Scan to open on another phone"]));
+  // QR code via free qrserver.com API (no account needed)
+  const qrSize=200;
+  const qrUrl="https://api.qrserver.com/v1/create-qr-code/?size="+qrSize+"x"+qrSize+"&data="+encodeURIComponent(url)+"&bgcolor=1c2a1c&color=4ade80&margin=10";
+  const img=el("img",{src:qrUrl,width:qrSize,height:qrSize,style:{borderRadius:10,display:"block",margin:"0 auto 14px"}});
+  box.appendChild(img);
+  // Copyable URL
+  const urlBox=div({style:{background:"rgba(255,255,255,0.04)",border:"1px solid #2a3d2a",borderRadius:8,
+    padding:"8px 10px",marginBottom:14,wordBreak:"break-all",fontSize:11,color:"#6b8f6b",textAlign:"left"}},[url]);
+  box.appendChild(urlBox);
+  // Copy button
+  const copyBtn=btn({style:{width:"100%",padding:"10px",borderRadius:8,border:"1px solid rgba(74,222,128,0.3)",
+    background:"rgba(74,222,128,0.08)",color:"#4ade80",fontSize:13,fontWeight:700,marginBottom:10},
+    onClick:()=>{
+      navigator.clipboard.writeText(url).then(()=>{
+        copyBtn.textContent="✓ Copied!";
+        setTimeout(()=>{copyBtn.textContent="Copy URL";},2000);
+      }).catch(()=>{
+        // Fallback for older iOS
+        copyBtn.textContent="Copy link above";
+      });
+    }},["Copy URL"]);
+  box.appendChild(copyBtn);
+  box.appendChild(btn({style:{width:"100%",padding:"10px",borderRadius:8,border:"1px solid #2a3d2a",
+    color:"#6b8f6b",fontSize:13,fontWeight:700},
+    onClick:()=>overlay.remove()},["Close"]));
+  overlay.appendChild(box);
+  overlay.addEventListener("click",e=>{if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+}
+
 function showConfirmModal(message,onConfirm){
   const overlay=div({className:"modal-overlay"},[]);
   const box=div({className:"modal-box"},[]);
