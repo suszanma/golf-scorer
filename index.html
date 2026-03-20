@@ -398,26 +398,8 @@ function scoreInput(ri,pi,hi,onAdvance){
     if(!state.scores[ri])state.scores[ri]=mkScoresForRound();
     state.scores[ri][pi][hi]=cleaned;
     scheduleSave();
-    // Auto-advance logic — advance BEFORE refreshing DOM so target input still exists
-    clearTimeout(advTimer);
-    if(cleaned&&onAdvance){
-      const num=parseInt(cleaned);
-      const doAdvanceAndRefresh=()=>{
-        const nextCoords=onAdvance(); // returns {pi,hi} of target, then rebuild
-        refreshScorecard(nextCoords?.pi,nextCoords?.hi);
-      };
-      if(cleaned.length===2){
-        doAdvanceAndRefresh();
-      } else if(num>=2&&num<=9){
-        doAdvanceAndRefresh();
-      } else if(num===1){
-        advTimer=setTimeout(doAdvanceAndRefresh,800);
-      } else {
-        refreshScorecard(); // score "0" or empty — just refresh, no advance
-      }
-    } else {
-      refreshScorecard(); // no advance callback, just refresh
-    }
+    // Update colours in-place without rebuilding DOM (keeps keyboard open on iOS)
+    refreshScorecard();
   });
   input.addEventListener("blur",()=>clearTimeout(advTimer));
   return input;
@@ -1043,7 +1025,7 @@ function buildScorecardContent(ri){
       state.netEntryMode?"Net scores":state.useSlopeRating?`Rating ${r.courseRating} · Slope ${r.courseSlope} · Par ${rd.totalPar}`:`Index HCP · Par ${rd.totalPar}`
     ]),
   ]));
-  htop.appendChild(div({style:{fontSize:12,fontWeight:700,color:sColor,textAlign:"right"}},[sLabel]));
+  htop.appendChild(div({"data-match-status":"",style:{fontSize:12,fontWeight:700,color:sColor,textAlign:"right"}},[sLabel]));
   head.appendChild(htop);
   const pairBoxes=div({style:{display:"flex",gap:6}},[]);
   pairs.forEach((team,pi)=>{
@@ -1097,17 +1079,19 @@ function buildScorecardContent(ri){
       t1Inputs.forEach((inp,idx)=>allScoreInputs.push({inp,h,pi:t1[idx],isLastT1:idx===t1Inputs.length-1,isLastT2:false}));
       t2Inputs.forEach((inp,idx)=>allScoreInputs.push({inp,h,pi:t2[idx],isLastT1:false,isLastT2:idx===t2Inputs.length-1}));
 
-      const row=div({style:{display:"grid",gridTemplateColumns:cols,gap:3,padding:"3px 2px",borderRadius:6,marginBottom:2,background:bg,border:`1px solid ${br}`}},[
+      const resultBadge=span({
+        "data-result-badge":"",
+        style:{fontSize:hd.result?"11px":"10px",fontWeight:hd.result?"800":"400",
+          color:hd.result==="p1"?"#4ade80":hd.result==="p2"?"#fbbf24":hd.result==="halve"?"#94a3b8":"#2a3d2a"}
+      },[hd.result?(hd.result==="halve"?"½":"W"):"·"]);
+      const row=div({"data-hole-row":h,style:{display:"grid",gridTemplateColumns:cols,gap:3,padding:"3px 2px",borderRadius:6,marginBottom:2,background:bg,border:`1px solid ${br}`}},[
         div({style:{textAlign:"center",alignSelf:"center"}},[
           div({style:{fontSize:11,fontWeight:700,color:"#6b8f6b"}},[(h+1)+""]),
           ...(!state.netEntryMode?[div({style:{fontSize:8,color:"#4b5563"}},[r.hcpIdx[h]+""])]:[]),
         ]),
         div({style:{textAlign:"center",fontSize:12,fontWeight:700,color:"#9ab89a",alignSelf:"center"}},[r.pars[h]+""]),
         ...t1Inputs.map(inp=>div({style:{display:"flex",justifyContent:"center"}},[inp])),
-        div({style:{textAlign:"center",alignSelf:"center"}},[
-          hd.result?span({style:{fontSize:11,fontWeight:800,color:hd.result==="p1"?"#4ade80":hd.result==="p2"?"#fbbf24":"#94a3b8"}},[hd.result==="halve"?"½":"W"]):
-          span({style:{color:"#2a3d2a",fontSize:10}},["·"]),
-        ]),
+        div({style:{textAlign:"center",alignSelf:"center"}},[resultBadge]),
         ...t2Inputs.map(inp=>div({style:{display:"flex",justifyContent:"center"}},[inp])),
       ]);
       body.appendChild(row);
@@ -1122,16 +1106,16 @@ function buildScorecardContent(ri){
         const gross=sl.reduce((s,v)=>s+(parseInt(v)||0),0);
         const net=state.netEntryMode?gross:sl.reduce((s,v,i)=>{const n=getNet(ri,pi,half*9+i);return n!==null?s+n:s;},0);
         const has=sl.some(v=>v!=="");
-        sub.appendChild(div({style:{textAlign:"center",fontSize:12,fontWeight:800,color:"#e8f5e8",alignSelf:"center"}},[
-          has?gross+"":"—",
-          ...(!state.netEntryMode&&has?[el("span",{style:{fontSize:8,color:"#6b8f6b"}},["("+net+")"])]:[]),
-        ]));
-        if(team===t1&&t1===sub.children[sub.children.length-t1.length]){} // spacer handled by grid
+        const grossSpan=el("span",{},[has?gross+"":"—"]);
+        const netSpan=el("span",{style:{fontSize:8,color:"#6b8f6b"}},[has&&!state.netEntryMode?"("+net+")":""]);
+        sub.appendChild(div({"data-subtotal":"player","data-subtotal-half":half,"data-subtotal-pi":pi,
+          style:{textAlign:"center",fontSize:12,fontWeight:800,color:"#e8f5e8",alignSelf:"center"}},[grossSpan,netSpan]));
       });
       if(team===t1){
         const p1h=rd.holes.slice(half*9,half*9+9).filter(h=>h.result==="p1").length;
         const p2h=rd.holes.slice(half*9,half*9+9).filter(h=>h.result==="p2").length;
-        sub.appendChild(div({style:{textAlign:"center",fontSize:11,fontWeight:700,color:"#6b8f6b",alignSelf:"center"}},[p1h+"-"+p2h]));
+        sub.appendChild(div({"data-subtotal":"split","data-subtotal-half":half,
+          style:{textAlign:"center",fontSize:11,fontWeight:700,color:"#6b8f6b",alignSelf:"center"}},[p1h+"-"+p2h]));
       }
     });
     body.appendChild(sub);
@@ -1174,18 +1158,20 @@ function buildScorecardContent(ri){
   const summary=div({style:{padding:"12px",background:"rgba(74,222,128,0.05)",borderRadius:12,border:"1px solid #2a3d2a"}},[]);
   summary.appendChild(div({style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},[
     span({style:{fontSize:11,fontWeight:700,color:"#6b8f6b"}},["MATCH RESULT"]),
-    span({style:{fontSize:13,fontWeight:800,color:sColor}},[sLabel]),
+    span({"data-summary-status":"",style:{fontSize:13,fontWeight:800,color:sColor}},[sLabel]),
   ]));
   const sg=div({style:{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,alignItems:"center"}},[]);
-  [[t1,"#4ade80",rd.p1w,rd.p1diff],[t2,"#fbbf24",rd.p2w,rd.p2diff]].forEach(([team,col,won,pdiff],pi)=>{
+  [[t1,"#4ade80",rd.p1w,rd.p1diff,"p1"],[t2,"#fbbf24",rd.p2w,rd.p2diff,"p2"]].forEach(([team,col,won,pdiff,side],pi)=>{
+    const diffSpan=span({"data-summary-diff":side,style:{color:pdiff===null?"#4b5563":pdiff<0?"#4ade80":pdiff===0?"#9ab89a":"#f97316",fontWeight:700,fontSize:11}},
+      [pdiff===null?"—":(pdiff>0?"+":"")+pdiff]);
     sg.appendChild(div({style:{textAlign:"center"}},[
       div({style:{fontSize:11,color:col,marginBottom:2}},[team.map(i=>state.players[i]?.name.split(" ")[0]||"?").join(" & ")||"(empty)"]),
-      div({style:{fontSize:22,fontWeight:900,color:col,lineHeight:1}},[won+""]),
-      div({style:{fontSize:11,color:"#6b8f6b",marginTop:2}},[diffLabel(pdiff)," net"]),
+      div({"data-summary-won":side,style:{fontSize:22,fontWeight:900,color:col,lineHeight:1}},[won+""]),
+      div({style:{fontSize:11,color:"#6b8f6b",marginTop:2}},[diffSpan," net"]),
     ]));
     if(pi===0)sg.appendChild(div({style:{textAlign:"center"}},[
       div({style:{fontSize:12,color:"#4b5563"}},["vs"]),
-      div({style:{fontSize:10,color:"#4b5563",marginTop:2}},[rd.halves+" halved"]),
+      div({"data-summary-halves":"",style:{fontSize:10,color:"#4b5563",marginTop:2}},[rd.halves+" halved"]),
     ]));
   });
   summary.appendChild(sg);
@@ -1194,15 +1180,106 @@ function buildScorecardContent(ri){
   return root;
 }
 function refreshScorecard(focusPi,focusHi){
-  // focusPi/focusHi: player index and hole index to re-focus after rebuild
+  // In-place update — NEVER rebuilds the DOM, so keyboard stays open on iOS.
+  // Only updates: hole row bg/border colours, result badges, subtotals, match summary header.
   if(state.screen!=="scorecard"||!scorecardRoot)return;
-  const inner=scorecardRoot.querySelector("div");
-  if(!inner)return;
-  inner.innerHTML="";
-  inner.appendChild(buildScorecardContent(state.activeRound));
-  // Re-focus the intended input after rebuild if specified
+  const ri=state.activeRound;
+  const rd=computeRound(ri);
+  const r=state.rounds[ri];
+  const{t1,t2}=rd;
+
+  // ── Update each score input's colour based on current value vs par ──────────
+  scorecardRoot.querySelectorAll(".score-input").forEach(inp=>{
+    const pi=parseInt(inp.getAttribute("data-pi"));
+    const hi=parseInt(inp.getAttribute("data-hi"));
+    if(isNaN(pi)||isNaN(hi))return;
+    const val=state.scores[ri]?.[pi]?.[hi]||"";
+    const par=parseInt(r.pars[hi])||4;
+    const v=parseInt(val);
+    const diff=!isNaN(v)&&val!==""?v-par:null;
+    let color="#9ab89a";
+    if(diff!==null){
+      if(diff<=-2)color="#fbbf24";else if(diff===-1)color="#4ade80";
+      else if(diff===0)color="#e8f5e8";else if(diff===1)color="#f97316";else color="#ef4444";
+    }
+    inp.style.color=color;
+    inp.style.background=val?"rgba(74,222,128,0.08)":"rgba(255,255,255,0.04)";
+    inp.style.border=`1px solid ${val?"rgba(74,222,128,0.25)":"rgba(255,255,255,0.07)"}`;
+  });
+
+  // ── Update hole row backgrounds and result badges ────────────────────────────
+  scorecardRoot.querySelectorAll("[data-hole-row]").forEach(row=>{
+    const h=parseInt(row.getAttribute("data-hole-row"));
+    if(isNaN(h))return;
+    const hd=rd.holes[h];
+    const bg=hd.result==="p1"?"rgba(74,222,128,0.06)":hd.result==="p2"?"rgba(251,191,36,0.06)":hd.result==="halve"?"rgba(148,163,184,0.04)":"transparent";
+    const br=hd.result==="p1"?"rgba(74,222,128,0.15)":hd.result==="p2"?"rgba(251,191,36,0.15)":hd.result==="halve"?"rgba(148,163,184,0.1)":"transparent";
+    row.style.background=bg;
+    row.style.borderColor=br;
+    const badge=row.querySelector("[data-result-badge]");
+    if(badge){
+      if(hd.result){
+        badge.textContent=hd.result==="halve"?"½":"W";
+        badge.style.color=hd.result==="p1"?"#4ade80":hd.result==="p2"?"#fbbf24":"#94a3b8";
+        badge.style.fontSize="11px";
+        badge.style.fontWeight="800";
+      } else {
+        badge.textContent="·";
+        badge.style.color="#2a3d2a";
+        badge.style.fontSize="10px";
+        badge.style.fontWeight="400";
+      }
+    }
+  });
+
+  // ── Update subtotals ──────────────────────────────────────────────────────────
+  scorecardRoot.querySelectorAll("[data-subtotal]").forEach(cell=>{
+    const half=parseInt(cell.getAttribute("data-subtotal-half"));
+    const pi=parseInt(cell.getAttribute("data-subtotal-pi"));
+    const isSplit=cell.getAttribute("data-subtotal")==="split";
+    if(isSplit){
+      const p1h=rd.holes.slice(half*9,half*9+9).filter(h=>h.result==="p1").length;
+      const p2h=rd.holes.slice(half*9,half*9+9).filter(h=>h.result==="p2").length;
+      cell.textContent=p1h+"-"+p2h;
+      return;
+    }
+    if(isNaN(pi))return;
+    const sl=state.scores[ri]?.[pi]?.slice(half*9,half*9+9)||[];
+    const gross=sl.reduce((s,v)=>s+(parseInt(v)||0),0);
+    const net=state.netEntryMode?gross:sl.reduce((s,v,i)=>{const n=getNet(ri,pi,half*9+i);return n!==null?s+n:s;},0);
+    const has=sl.some(v=>v!=="");
+    // Find the two child spans: gross and net
+    const spans=cell.querySelectorAll("span");
+    if(spans.length>=1) spans[0].textContent=has?gross+"":"—";
+    if(spans.length>=2) spans[1].textContent=has&&!state.netEntryMode?"("+net+")":"";
+  });
+
+  // ── Update sticky header match status ────────────────────────────────────────
+  const diff=rd.p1w-rd.p2w;
+  const sLabel=diff===0&&rd.p1w===0?"Not Started":diff===0?"All Square":
+    `${(diff>0?t1:t2).map(i=>state.players[i]?.name.split(" ")[0]||"?").join("&")} ${Math.abs(diff)} UP`;
+  const sColor=diff===0&&rd.p1w===0?"#6b8f6b":diff===0?"#94a3b8":diff>0?"#4ade80":"#fbbf24";
+  const statusEl=scorecardRoot.querySelector("[data-match-status]");
+  if(statusEl){statusEl.textContent=sLabel;statusEl.style.color=sColor;}
+
+  // ── Update match summary ──────────────────────────────────────────────────────
+  const sumStatus=scorecardRoot.querySelector("[data-summary-status]");
+  if(sumStatus){sumStatus.textContent=sLabel;sumStatus.style.color=sColor;}
+  [[t1,"p1",rd.p1w,rd.p1diff],[t2,"p2",rd.p2w,rd.p2diff]].forEach(([team,side,won,pdiff])=>{
+    const wEl=scorecardRoot.querySelector(`[data-summary-won="${side}"]`);
+    if(wEl)wEl.textContent=won+"";
+    const dEl=scorecardRoot.querySelector(`[data-summary-diff="${side}"]`);
+    if(dEl){
+      if(pdiff===null){dEl.textContent="—";dEl.style.color="#4b5563";}
+      else{dEl.textContent=(pdiff>0?"+":"")+pdiff;dEl.style.color=pdiff<0?"#4ade80":pdiff===0?"#9ab89a":"#f97316";}
+    }
+  });
+  const halvesEl=scorecardRoot.querySelector("[data-summary-halves]");
+  if(halvesEl)halvesEl.textContent=rd.halves+" halved";
+
+  // ── Advance focus if requested ────────────────────────────────────────────────
   if(focusPi!==undefined&&focusHi!==undefined){
-    const target=inner.querySelector(`[data-pi="${focusPi}"][data-hi="${focusHi}"]`);
+    const target=scorecardRoot.querySelector(`[data-pi="${focusPi}"][data-hi="${focusHi}"]`);
     if(target){target.focus();target.select();}
   }
 }
