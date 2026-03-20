@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Golf Leaderboard"/>
+<title>Golf Leaderboard</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+html,body{background:#0f1a0f;color:#e8f5e8;font-family:Georgia,'Times New Roman',serif;min-height:100vh;font-size:16px}
+.card{background:#1c2a1c;border-radius:14px;border:1px solid #2a3d2a;overflow:hidden;margin-bottom:12px}
+.topbar{background:#0f1a0f;border-bottom:1px solid #2a3d2a;padding:14px 16px 12px;position:sticky;top:0;z-index:10}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;flex-shrink:0}
+</style>
+</head>
+<body>
+<div id="app">
+  <div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:12px">
+    <div style="font-size:40px">⛳</div>
+    <div style="font-size:15px;color:#6b8f6b">Loading leaderboard…</div>
+  </div>
+</div>
+<script>
+const FB_URL="https://golf-scorer-8a6de-default-rtdb.firebaseio.com/tournament.json";
+const PCOLORS=["#4ade80","#fbbf24","#60a5fa","#f87171","#c084fc","#fb923c","#34d399","#f472b6"];
+
+// ─── Scoring logic (read-only, mirrors index.html) ────────────────────────────
+function calcCourseHcp(hcpIndex,slope,rating,totalPar){
+  if(!state.useSlopeRating)return Math.round(parseFloat(hcpIndex)||0);
+  return Math.round((parseFloat(hcpIndex)||0)*((parseFloat(slope)||113)/113)+((parseFloat(rating)||totalPar)-totalPar));
+}
+function hcpStrokes(courseHcp,holeIdx){
+  if(courseHcp<=0)return 0;
+  const full=Math.floor(courseHcp);
+  return (holeIdx<=full?1:0)+((courseHcp-full>0&&holeIdx===1)?1:0);
+}
+function getNet(ri,pi,hi){
+  const val=state.scores[ri]?.[pi]?.[hi];
+  const g=parseInt(val);if(isNaN(g)||!val)return null;
+  if(state.netEntryMode)return g;
+  const r=state.rounds[ri];
+  const totalPar=r.pars.reduce((s,p)=>s+(parseInt(p)||0),0);
+  const cHcp=calcCourseHcp(state.players[pi]?.handicap,r.courseSlope,r.courseRating,totalPar);
+  return g-hcpStrokes(cHcp,parseInt(r.hcpIdx[hi])||0);
+}
+function getTeams(ri){return state.rounds[ri].teams||[[0,1],[2,3]];}
+function bestBall(ri,team,hole){
+  const nets=team.map(pi=>getNet(ri,pi,hole));
+  const valid=nets.filter(n=>n!==null);
+  return valid.length?Math.min(...valid):null;
+}
+function computeRound(ri){
+  const r=state.rounds[ri];
+  const teams=getTeams(ri);
+  const t1=teams[0]||[],t2=teams[1]||[];
+  let p1w=0,p2w=0,halves=0;
+  const holes=[];
+  for(let h=0;h<18;h++){
+    const bb1=bestBall(ri,t1,h);
+    const bb2=bestBall(ri,t2,h);
+    let result=null;
+    if(bb1!==null&&bb2!==null){
+      if(bb1<bb2){result="p1";p1w++;}
+      else if(bb2<bb1){result="p2";p2w++;}
+      else{result="halve";halves++;}
+    }
+    holes.push({bb1,bb2,result,par:parseInt(r.pars[h])||4});
+  }
+  const diff=p1w-p2w;
+  const done=holes.filter(h=>h.result!==null);
+  const parDone=done.reduce((s,h)=>s+h.par,0);
+  const p1net=done.reduce((s,h)=>h.bb1!==null?s+h.bb1:s,0);
+  const p2net=done.reduce((s,h)=>h.bb2!==null?s+h.bb2:s,0);
+  return{holes,p1w,p2w,halves,t1,t2,
+    leader:diff>0?"p1":diff<0?"p2":"none",
+    matchStr:diff===0?"A/S":`${Math.abs(diff)} UP`,
+    p1diff:done.length?p1net-parDone:null,
+    p2diff:done.length?p2net-parDone:null};
+}
+function computeOverall(){
+  const pts=Array(state.players.length).fill(0);
+  const rounds=state.rounds.map((r,ri)=>{
+    const rd=computeRound(ri);
+    const{t1,t2}=rd;
+    const has=[...t1,...t2].some(pi=>state.scores[ri]?.[pi]?.some(s=>s!==""));
+    if(!has)return{...rd,w1:0,w2:0};
+    let w1=0,w2=0;
+    if(rd.leader==="p1")w1=1;else if(rd.leader==="p2")w2=1;else{w1=0.5;w2=0.5;}
+    t1.forEach(pi=>{if(pi<pts.length)pts[pi]+=w1;});
+    t2.forEach(pi=>{if(pi<pts.length)pts[pi]+=w2;});
+    return{...rd,w1,w2};
+  });
+  return{pts,rounds};
+}
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let state={
+  players:[],rounds:[],scores:[],
+  netEntryMode:false,useSlopeRating:true
+};
+let lastUpdated=null;
+
+function applyData(s){
+  if(!s)return;
+  if(s.players)state.players=s.players;
+  if(s.rounds) state.rounds=s.rounds.map(r=>({teeBox:"",teams:[[0,1],[2,3]],...r}));
+  if(s.scores) state.scores=s.scores;
+  if(s.netEntryMode!==undefined)state.netEntryMode=s.netEntryMode;
+  if(s.useSlopeRating!==undefined)state.useSlopeRating=s.useSlopeRating;
+  while(state.scores.length<state.rounds.length)state.scores.push([]);
+  lastUpdated=new Date();
+}
+
+// ─── DOM helpers ──────────────────────────────────────────────────────────────
+function el(tag,attrs={},children=[]){
+  const e=document.createElement(tag);
+  for(const[k,v]of Object.entries(attrs)){
+    if(k==="style"&&typeof v==="object")Object.assign(e.style,v);
+    else if(k==="className")e.className=v;
+    else e.setAttribute(k,v);
+  }
+  for(const c of[children].flat()){
+    if(c===null||c===undefined)continue;
+    if(typeof c==="string"||typeof c==="number")e.appendChild(document.createTextNode(String(c)));
+    else e.appendChild(c);
+  }
+  return e;
+}
+const div=(a,c)=>el("div",a,c);
+const span=(a,c)=>el("span",a,c);
+function pcolor(i){return PCOLORS[i%PCOLORS.length];}
+function playerDot(i,size=10){return div({style:{width:size+"px",height:size+"px",borderRadius:"50%",background:pcolor(i),flexShrink:0}},[]);}
+function diffLabel(diff){
+  if(diff===null)return span({style:{color:"#4b5563",fontSize:11}},["—"]);
+  const color=diff<0?"#4ade80":diff===0?"#9ab89a":"#f97316";
+  return span({style:{color,fontWeight:700,fontSize:11}},[diff>0?`+${diff}`:diff+""]);
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function render(){
+  const app=document.getElementById("app");
+  app.innerHTML="";
+
+  if(!state.players.length){
+    app.appendChild(div({style:{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",flexDirection:"column",gap:12}},[
+      div({style:{fontSize:40}},["⛳"]),
+      div({style:{fontSize:15,color:"#6b8f6b"}},["Waiting for tournament data…"]),
+      div({style:{fontSize:12,color:"#4b5563",marginTop:4}},["Make sure the scorer app has been set up."]),
+    ]));
+    return;
+  }
+
+  const{pts,rounds:rds}=computeOverall();
+  const ranked=[...state.players.map((p,i)=>({...p,idx:i,pts:pts[i]}))].sort((a,b)=>b.pts-a.pts);
+
+  // ── Top bar ──
+  const topbar=div({className:"topbar"},[]);
+  topbar.appendChild(div({style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}},[
+    div({style:{display:"flex",alignItems:"center",gap:8}},[
+      span({style:{fontSize:22}},["⛳"]),
+      div({},[
+        div({style:{fontSize:16,fontWeight:900,color:"#4ade80",letterSpacing:"-0.02em"}},["Tournament Leaderboard"]),
+        div({style:{fontSize:11,color:"#6b8f6b"}},["Live · Read Only"]),
+      ]),
+    ]),
+    div({style:{display:"flex",alignItems:"center",gap:5}},[
+      div({className:"live-dot"},[]),
+      span({style:{fontSize:11,color:"#4ade80",fontWeight:700}},["LIVE"]),
+    ]),
+  ]));
+  if(lastUpdated){
+    topbar.appendChild(div({style:{fontSize:10,color:"#4b5563",textAlign:"right"}},[
+      "Updated "+lastUpdated.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"})
+    ]));
+  }
+  app.appendChild(topbar);
+
+  const wrap=div({style:{padding:"14px",maxWidth:500,margin:"0 auto"}},[]);
+
+  // ── Overall standings ──
+  wrap.appendChild(div({style:{textAlign:"center",marginBottom:16}},[
+    div({style:{fontSize:11,fontWeight:700,color:"#6b8f6b",letterSpacing:"0.08em",marginBottom:4}},["OVERALL STANDINGS"]),
+    div({style:{fontSize:11,color:"#4b5563"}},["Win=1pt · Halve=0.5pt · Loss=0pts"]),
+  ]));
+
+  const card=div({className:"card",style:{marginBottom:20}},[]);
+  ranked.forEach((p,rank)=>{
+    const isLead=rank===0&&p.pts>0;
+    const row=div({style:{display:"flex",alignItems:"center",gap:10,padding:"14px 14px",
+      borderBottom:rank<ranked.length-1?"1px solid #1a271a":"none",
+      background:isLead?"rgba(251,191,36,0.03)":"transparent"}},[]);
+    row.appendChild(div({style:{width:26,height:26,borderRadius:"50%",flexShrink:0,
+      background:isLead?"rgba(251,191,36,0.2)":"rgba(255,255,255,0.04)",
+      display:"flex",alignItems:"center",justifyContent:"center",
+      fontSize:13,fontWeight:800,color:isLead?"#fbbf24":"#6b8f6b"}},[(rank+1)+""]))
+    row.appendChild(playerDot(p.idx));
+    row.appendChild(div({style:{flex:1}},[
+      div({style:{fontSize:15,fontWeight:700,color:"#e8f5e8"}},[p.name]),
+      div({style:{fontSize:11,color:"#6b8f6b"}},["HCP "+p.handicap]),
+    ]));
+    // Round tiles
+    const tiles=div({style:{display:"flex",gap:3}},[]);
+    state.rounds.forEach((r,ri)=>{
+      const teams=getTeams(ri);
+      const inT1=teams[0].includes(p.idx),inT2=teams[1].includes(p.idx);
+      const has=[...teams[0],...teams[1]].some(pi=>state.scores[ri]?.[pi]?.some(s=>s!==""));
+      let tpts=null;
+      if(has&&(inT1||inT2))tpts=inT1?rds[ri].w1:rds[ri].w2;
+      const tc=tpts===1?"rgba(74,222,128,0.15)":tpts===0.5?"rgba(148,163,184,0.1)":tpts===0&&tpts!==null?"rgba(239,68,68,0.1)":"rgba(255,255,255,0.04)";
+      const bc=tpts===1?"rgba(74,222,128,0.3)":tpts===0.5?"rgba(148,163,184,0.2)":tpts===0&&tpts!==null?"rgba(239,68,68,0.2)":"rgba(255,255,255,0.06)";
+      const fc=tpts===1?"#4ade80":tpts===0.5?"#94a3b8":tpts===0&&tpts!==null?"#f87171":"#4b5563";
+      const lbl=tpts===0.5?"½":tpts!==null?tpts+"":"·";
+      tiles.appendChild(div({style:{width:22,height:22,borderRadius:4,background:tc,border:`1px solid ${bc}`,
+        display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:fc}},[lbl]));
+    });
+    row.appendChild(tiles);
+    row.appendChild(div({style:{textAlign:"right",minWidth:40}},[
+      div({style:{fontSize:26,fontWeight:900,color:pcolor(p.idx),lineHeight:1}},[(p.pts)+""]),
+      div({style:{fontSize:10,color:"#6b8f6b"}},["pts"]),
+    ]));
+    card.appendChild(row);
+  });
+  wrap.appendChild(card);
+
+  // ── Round results ──
+  wrap.appendChild(div({style:{fontSize:11,fontWeight:700,color:"#6b8f6b",letterSpacing:"0.08em",marginBottom:10}},["ROUND RESULTS"]));
+  state.rounds.forEach((r,ri)=>{
+    const rd=rds[ri];
+    const{t1,t2}=rd;
+    const has=[...t1,...t2].some(pi=>state.scores[ri]?.[pi]?.some(s=>s!==""));
+    const rc=div({className:"card",style:{marginBottom:10}},[]);
+    // Header
+    rc.appendChild(div({style:{display:"flex",alignItems:"center",justifyContent:"space-between",
+      padding:"9px 12px",borderBottom:"1px solid #1a271a",background:"rgba(74,222,128,0.03)"}},[
+      div({},[
+        div({style:{fontSize:13,fontWeight:700,color:"#e8f5e8"}},[r.label+(r.teeBox?" — "+r.teeBox:"")]),
+        div({style:{fontSize:10,color:"#4b5563"}},[(state.useSlopeRating&&!state.netEntryMode?"Rating "+r.courseRating+" · Slope "+r.courseSlope:state.netEntryMode?"Net Entry":"Index Only")]),
+      ]),
+      has?span({style:{fontSize:13,fontWeight:700,color:rd.leader==="none"?"#94a3b8":rd.leader==="p1"?"#4ade80":"#fbbf24"}},[rd.leader==="none"?"All Square":rd.matchStr]):
+        span({style:{fontSize:11,color:"#4b5563",fontStyle:"italic"}},["Not started"]),
+    ]));
+    // Teams
+    const rb=div({style:{padding:"12px 14px"}},[]);
+    [[t1,"#4ade80","p1"],[t2,"#fbbf24","p2"]].forEach(([team,col,side],ti)=>{
+      const pr=div({style:{display:"flex",alignItems:"center",justifyContent:"space-between",
+        padding:"8px 0",borderBottom:ti===0?"1px solid #1a271a":"none"}},[]);
+      const pnames=div({style:{flex:1,display:"flex",flexDirection:"column",gap:2}},[]);
+      pnames.appendChild(div({style:{fontSize:10,fontWeight:700,color:ti===0?"#4ade80":"#fbbf24",letterSpacing:"0.06em",marginBottom:2}},["TEAM "+(ti===0?"A":"B")]));
+      if(team.length===0)pnames.appendChild(span({style:{fontSize:12,color:"#4b5563"}},["(empty)"]));
+      else team.forEach(idx=>pnames.appendChild(span({style:{fontSize:13,fontWeight:600,color:pcolor(idx)}},[state.players[idx]?.name||"?"])));
+      pr.appendChild(pnames);
+      const pright=div({style:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,minWidth:90}},[]);
+      if(has){
+        const won=side==="p1"?rd.p1w:rd.p2w;
+        const isWin=rd.leader===side;
+        const pts=side==="p1"?rd.w1:rd.w2;
+        const ptsLabel=pts===0.5?"½":pts+"";
+        pright.appendChild(div({style:{display:"flex",alignItems:"center",gap:4}},[
+          span({style:{fontSize:10,color:"#6b8f6b"}},["Net "]),
+          diffLabel(side==="p1"?rd.p1diff:rd.p2diff),
+        ]));
+        pright.appendChild(div({style:{display:"flex",alignItems:"center",gap:4}},[
+          span({style:{fontSize:10,color:"#6b8f6b"}},["Holes "]),
+          span({style:{fontSize:13,fontWeight:700,color:isWin?col:"#9ab89a"}},[won+""]),
+        ]));
+        pright.appendChild(div({style:{display:"flex",alignItems:"center",gap:4}},[
+          span({style:{fontSize:10,color:"#6b8f6b"}},["Pts "]),
+          span({style:{fontSize:18,fontWeight:900,color:isWin?col:"#6b8f6b",lineHeight:1}},[ptsLabel]),
+        ]));
+      } else {
+        pright.appendChild(span({style:{fontSize:13,color:"#4b5563"}},["—"]));
+      }
+      pr.appendChild(pright);
+      rb.appendChild(pr);
+    });
+    if(has)rb.appendChild(div({style:{paddingTop:8,display:"flex",justifyContent:"space-between",alignItems:"center"}},[
+      span({style:{fontSize:11,color:"#6b8f6b"}},[rd.halves+" holes halved"]),
+      span({style:{fontSize:13,fontWeight:700,color:rd.leader==="none"?"#94a3b8":rd.leader==="p1"?"#4ade80":"#fbbf24"}},[rd.leader==="none"?"All Square":rd.matchStr]),
+    ]));
+    rc.appendChild(rb);
+    wrap.appendChild(rc);
+  });
+
+  // ── Footer ──
+  wrap.appendChild(div({style:{textAlign:"center",padding:"16px 0 32px"}},[
+    div({style:{fontSize:11,color:"#4b5563"}},[" View-only · Scores entered in the scorer app"]),
+    div({style:{fontSize:10,color:"#2a3d2a",marginTop:4}},["Auto-refreshes live"]),
+  ]));
+
+  app.appendChild(wrap);
+}
+
+// ─── Firebase live sync (read-only) ──────────────────────────────────────────
+async function init(){
+  // Initial fetch
+  try{
+    const res=await fetch(FB_URL);
+    if(res.ok){const data=await res.json();applyData(data);}
+  }catch(e){}
+  render();
+
+  // Live updates via Server-Sent Events
+  try{
+    const es=new EventSource(FB_URL.replace(".json","")+"/.json");
+    es.addEventListener("put",e=>{
+      try{
+        const msg=JSON.parse(e.data);
+        if(msg&&msg.data){applyData(msg.data);render();}
+      }catch(ex){}
+    });
+    es.onerror=()=>es.close();
+  }catch(e){}
+}
+
+init();
+</script>
+</body>
+</html>

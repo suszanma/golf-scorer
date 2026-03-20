@@ -902,7 +902,7 @@ function renderLeaderboard(){
   });
 
   // ── Share / QR button ────────────────────────────────────────────────────────
-  const APP_URL="https://suszanma.github.io/golf-scorer/";
+  const APP_URL="https://suszanma.github.io/golf-scorer/leaderboard.html";
   const shareSection=div({style:{margin:"20px 0 8px",textAlign:"center"}},[]);
   shareSection.appendChild(btn({
     style:{padding:"12px 24px",borderRadius:12,border:"1px solid rgba(74,222,128,0.3)",
@@ -1223,7 +1223,7 @@ function showQRModal(url){
   const overlay=div({className:"modal-overlay"},[]);
   const box=div({className:"modal-box"},[]);
   box.appendChild(div({style:{fontSize:15,fontWeight:800,color:"#4ade80",marginBottom:4}},["⛳ Share Scorer"]));
-  box.appendChild(div({style:{fontSize:11,color:"#6b8f6b",marginBottom:16}},["Scan to open on another phone"]));
+  box.appendChild(div({style:{fontSize:11,color:"#6b8f6b",marginBottom:16}},["Scan to view the live leaderboard (read-only)"]));
   // QR code via free qrserver.com API (no account needed)
   const qrSize=200;
   const qrUrl="https://api.qrserver.com/v1/create-qr-code/?size="+qrSize+"x"+qrSize+"&data="+encodeURIComponent(url)+"&bgcolor=1c2a1c&color=4ade80&margin=10";
