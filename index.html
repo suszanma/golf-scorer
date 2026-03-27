@@ -8,33 +8,33 @@
 <meta name="apple-mobile-web-app-title" content="Golf Scorer"/>
 <title>Match Play Scorer</title>
 <style>
+/* ── Option D: Polished Green ── */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
-html,body{background:#0f1a0f;color:#e8f5e8;font-family:Georgia,'Times New Roman',serif;min-height:100vh;font-size:16px}
-input,button{font-family:Georgia,'Times New Roman',serif}
+html,body{background:#0a1510;color:#eaf5ea;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',sans-serif;min-height:100vh;font-size:16px}
+input,button{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',sans-serif}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 input[type=number]{-moz-appearance:textfield}
 button{cursor:pointer;background:none;border:none}
-.card{background:#1c2a1c;border-radius:14px;border:1px solid #2a3d2a;overflow:hidden;margin-bottom:12px}
-.card-header{padding:10px 16px;border-bottom:1px solid #2a3d2a;background:rgba(74,222,128,0.04);display:flex;align-items:center;justify-content:space-between}
-.card-header span{font-size:11px;font-weight:700;color:#6b8f6b;letter-spacing:0.08em}
-.score-input{width:44px;height:42px;border-radius:6px;font-size:16px;font-weight:700;text-align:center;outline:none;border:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.04);color:#9ab89a;font-family:Georgia,serif;-webkit-appearance:none}
-.score-input:focus{border-color:rgba(74,222,128,0.4);background:rgba(74,222,128,0.08)}
-.topbar{position:sticky;top:0;z-index:20;background:#0f1a0f;border-bottom:1px solid #2a3d2a;padding:12px 16px 0}
-.tabs{display:flex;gap:4px;margin-top:10px}
-.tab-btn{flex:1;padding:9px 0;background:none;border:none;border-bottom:2px solid transparent;color:#6b8f6b;font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;font-family:Georgia,serif}
-.tab-btn.active{border-bottom-color:#4ade80;color:#4ade80}
-.btn-primary{width:100%;padding:16px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:12px;color:#fff;font-size:17px;font-weight:800;box-shadow:0 4px 24px rgba(34,197,94,0.3);font-family:Georgia,serif}
-.btn-secondary{padding:14px;background:none;border:1px solid #2a3d2a;border-radius:12px;color:#6b8f6b;font-size:15px;font-weight:700;font-family:Georgia,serif}
-.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #1a271a}
-.toggle{position:relative;width:44px;height:26px;flex-shrink:0}
+.card{background:#122018;border-radius:18px;border:1px solid #1f3326;overflow:hidden;margin-bottom:14px;box-shadow:0 2px 16px rgba(0,0,0,0.35)}
+.card-header{padding:12px 18px;border-bottom:1px solid #1f3326;background:rgba(61,214,140,0.05);display:flex;align-items:center;justify-content:space-between}
+.card-header span{font-size:11px;font-weight:700;color:#5a8a6a;letter-spacing:0.1em;text-transform:uppercase}
+.score-input{width:46px;height:46px;border-radius:10px;font-size:18px;font-weight:800;text-align:center;outline:none;border:1.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#6dbf8a;font-family:inherit;-webkit-appearance:none;transition:all 0.15s}
+.score-input:focus{border-color:rgba(61,214,140,0.5);background:rgba(61,214,140,0.1);color:#eaf5ea;box-shadow:0 0 0 3px rgba(61,214,140,0.12)}
+.topbar{position:sticky;top:0;z-index:20;background:#0a1510;border-bottom:1px solid #1f3326;padding:14px 18px 0;backdrop-filter:blur(10px)}
+.tabs{display:flex;gap:2px;margin-top:12px;background:#0d1c13;border-radius:10px;padding:3px}
+.tab-btn{flex:1;padding:8px 0;background:none;border:none;border-radius:8px;color:#5a8a6a;font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;font-family:inherit;transition:all 0.15s}
+.tab-btn.active{background:#1a3525;color:#3dd68c;box-shadow:0 1px 4px rgba(0,0,0,0.3)}
+.btn-primary{width:100%;padding:17px;background:linear-gradient(135deg,#2dd460,#18a046);border:none;border-radius:14px;color:#fff;font-size:17px;font-weight:800;box-shadow:0 4px 20px rgba(45,212,96,0.35),0 1px 0 rgba(255,255,255,0.1) inset;font-family:inherit;letter-spacing:0.01em}
+.btn-secondary{padding:15px;background:rgba(255,255,255,0.04);border:1.5px solid #1f3326;border-radius:14px;color:#5a8a6a;font-size:15px;font-weight:700;font-family:inherit}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid #172a1e}
+.toggle{position:relative;width:46px;height:28px;flex-shrink:0}
 .toggle input{opacity:0;width:0;height:0}
-.toggle-slider{position:absolute;inset:0;background:#2a3d2a;border-radius:13px;transition:0.2s}
-.toggle-slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:#6b8f6b;border-radius:50%;transition:0.2s}
-.toggle input:checked+.toggle-slider{background:rgba(74,222,128,0.3)}
-.toggle input:checked+.toggle-slider:before{transform:translateX(18px);background:#4ade80}
-/* Confirmation modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px}
-.modal-box{background:#1c2a1c;border:1px solid #2a3d2a;border-radius:16px;padding:24px;width:100%;max-width:320px;text-align:center}
+.toggle-slider{position:absolute;inset:0;background:#1f3326;border-radius:14px;transition:0.2s;box-shadow:inset 0 1px 3px rgba(0,0,0,0.3)}
+.toggle-slider:before{content:"";position:absolute;height:22px;width:22px;left:3px;bottom:3px;background:#5a8a6a;border-radius:50%;transition:0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.toggle input:checked+.toggle-slider{background:rgba(61,214,140,0.28)}
+.toggle input:checked+.toggle-slider:before{transform:translateX(18px);background:#3dd68c;box-shadow:0 0 6px rgba(61,214,140,0.5)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)}
+.modal-box{background:#122018;border:1px solid #1f3326;border-radius:20px;padding:28px;width:100%;max-width:320px;text-align:center;box-shadow:0 12px 48px rgba(0,0,0,0.6)}
 </style>
 </head>
 <body>
@@ -42,7 +42,7 @@ button{cursor:pointer;background:none;border:none}
 <script>
 const DEFAULT_PARS=[4,4,3,4,5,3,4,4,5,4,3,4,5,4,3,4,4,5];
 const DEFAULT_HCP=[11,3,15,7,1,17,13,5,9,10,16,6,2,14,18,8,4,12];
-const PCOLORS=["#4ade80","#fbbf24","#60a5fa","#f87171","#c084fc","#fb923c","#34d399","#f472b6"];
+const PCOLORS=["#3dd68c","#fbbf24","#60a5fa","#f87171","#c084fc","#fb923c","#34d399","#f472b6"];
 const STORAGE_KEY="golf-scorer-v4";
 const MAX_PLAYERS=8;
 const MAX_ROUNDS=6;
@@ -186,7 +186,7 @@ function scheduleSave(){
 function renderSaveStatus(){
   document.querySelectorAll(".save-status").forEach(el=>{
     if(state.saveStatus==="idle"){el.textContent="";return;}
-    const c={saving:{t:"Syncing…",c:"#6b8f6b"},saved:{t:"✓ Synced",c:"#4ade80"},error:{t:"⚠ Sync failed",c:"#f87171"}}[state.saveStatus];
+    const c={saving:{t:"Syncing…",c:"#5a8a6a"},saved:{t:"✓ Synced",c:"#3dd68c"},error:{t:"⚠ Sync failed",c:"#f87171"}}[state.saveStatus];
     el.textContent=c.t;el.style.color=c.c;
   });
 }
@@ -364,7 +364,7 @@ function playerDot(i,size=10){return div({style:{width:size+"px",height:size+"px
 function playerBadge(i){return div({style:{width:28,height:28,borderRadius:"50%",background:pcolor(i)+"20",border:`1.5px solid ${pcolor(i)}50`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:pcolor(i),flexShrink:0}},[(i+1)+""]) }
 function diffLabel(diff){
   if(diff===null)return span({style:{color:"#4b5563",fontSize:11}},["—"]);
-  const color=diff<0?"#4ade80":diff===0?"#9ab89a":"#f97316";
+  const color=diff<0?"#3dd68c":diff===0?"#6dbf8a":"#f97316";
   return span({style:{color,fontWeight:700,fontSize:11}},[diff>0?`+${diff}`:diff+""]);
 }
 function toggleSwitch(checked,onChange){
@@ -384,15 +384,15 @@ function scoreInput(ri,pi,hi,flatIdx,allInputs,isLastOnHole){
   const par=parseInt(state.rounds[ri].pars[hi])||4;
   const v=parseInt(val);
   const diff=!isNaN(v)?v-par:null;
-  let color="#9ab89a";
+  let color="#6dbf8a";
   if(diff!==null){
-    if(diff<=-2)color="#fbbf24";else if(diff===-1)color="#4ade80";
-    else if(diff===0)color="#e8f5e8";else if(diff===1)color="#f97316";else color="#ef4444";
+    if(diff<=-2)color="#fbbf24";else if(diff===-1)color="#3dd68c";
+    else if(diff===0)color="#eaf5ea";else if(diff===1)color="#f97316";else color="#ef4444";
   }
   const input=inp({type:"text",inputmode:"numeric",pattern:"[0-9]*",maxlength:"2",value:val,
     "data-pi":pi,"data-hi":hi,
-    className:"score-input",style:{color,background:val?"rgba(74,222,128,0.08)":"rgba(255,255,255,0.04)",
-      border:`1px solid ${val?"rgba(74,222,128,0.25)":"rgba(255,255,255,0.07)"}`}});
+    className:"score-input",style:{color,background:val?"rgba(61,214,140,0.08)":"rgba(255,255,255,0.04)",
+      border:`1px solid ${val?"rgba(61,214,140,0.25)":"rgba(255,255,255,0.07)"}`}});
   input.addEventListener("input",e=>{
     const cleaned=e.target.value.replace(/[^0-9]/g,"");
     e.target.value=cleaned;
@@ -428,10 +428,10 @@ function scoreInput(ri,pi,hi,flatIdx,allInputs,isLastOnHole){
 
 // ─── Setup Screen ─────────────────────────────────────────────────────────────
 function renderSetup(){
-  const wrap=div({style:{minHeight:"100vh",background:"#0f1a0f"}},[]);
+  const wrap=div({style:{minHeight:"100vh",background:"#0a1510"}},[]);
   wrap.appendChild(div({style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px 0"}},[
     div({style:{display:"flex",alignItems:"center",gap:6}},[
-      span({style:{fontSize:13,color:"#6b8f6b",fontWeight:700}},["⛳ Match Play Scorer"]),
+      span({style:{fontSize:13,color:"#5a8a6a",fontWeight:700}},["⛳ Match Play Scorer"]),
       span({className:"save-status",style:{fontSize:10,fontWeight:700,marginLeft:6}},[]),
     ]),
     btn({style:{color:"#f87171",fontSize:13,fontWeight:700,padding:"6px 12px",background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10},onClick:handleReset},["Reset All"]),
@@ -442,8 +442,8 @@ function renderSetup(){
     const inner=div({style:{padding:"24px 16px",maxWidth:480,margin:"0 auto"}},[]);
     inner.appendChild(div({style:{textAlign:"center",marginBottom:24}},[
       div({style:{fontSize:44,marginBottom:8}},["⛳"]),
-      el("h1",{style:{fontSize:26,fontWeight:900,color:"#4ade80",letterSpacing:"-0.03em",marginBottom:4}},["Match Play Scorer"]),
-      el("p",{style:{color:"#6b8f6b",fontSize:13}},["Step 1 of 2 — Players & Settings"]),
+      el("h1",{style:{fontSize:26,fontWeight:900,color:"#3dd68c",letterSpacing:"-0.03em",marginBottom:4}},["Match Play Scorer"]),
+      el("p",{style:{color:"#5a8a6a",fontSize:13}},["Step 1 of 2 — Players & Settings"]),
     ]));
 
     // Players card
@@ -453,15 +453,15 @@ function renderSetup(){
       span({style:{fontSize:11,color:"#4b5563"}},[state.players.length+"/"+MAX_PLAYERS]),
     ]));
     state.players.forEach((p,i)=>{
-      const row=div({style:{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderBottom:i<state.players.length-1?"1px solid #1a271a":"none"}},[]);
+      const row=div({style:{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderBottom:i<state.players.length-1?"1px solid #172a1e":"none"}},[]);
       row.appendChild(playerBadge(i));
       const nameIn=selectOnFocus(inp({type:"text",value:p.name,placeholder:`Player ${i+1}`,
-        style:{flex:1,background:"transparent",border:"none",color:"#e8f5e8",fontSize:14,fontWeight:600,outline:"none"}}));
+        style:{flex:1,background:"transparent",border:"none",color:"#eaf5ea",fontSize:14,fontWeight:600,outline:"none"}}));
       nameIn.addEventListener("input",e=>{state.players[i].name=e.target.value;scheduleSave();});
       row.appendChild(nameIn);
-      row.appendChild(span({style:{fontSize:11,color:"#6b8f6b",marginRight:2}},["HCP"]));
+      row.appendChild(span({style:{fontSize:11,color:"#5a8a6a",marginRight:2}},["HCP"]));
       const hcpIn=inp({type:"text",inputmode:"decimal",pattern:"[0-9.]*",maxlength:"5",value:p.handicap,
-        style:{width:52,height:32,background:"rgba(255,255,255,0.05)",border:"1px solid #2a3d2a",borderRadius:6,color:"#4ade80",fontSize:13,fontWeight:700,textAlign:"center",outline:"none"}});
+        style:{width:52,height:32,background:"rgba(255,255,255,0.05)",border:"1px solid #1f3326",borderRadius:6,color:"#3dd68c",fontSize:13,fontWeight:700,textAlign:"center",outline:"none"}});
       hcpIn.addEventListener("input",e=>{const v=e.target.value.replace(/[^0-9.]/g,"");e.target.value=v;state.players[i].handicap=v;scheduleSave();});
       row.appendChild(hcpIn);
       // Remove player button
@@ -473,8 +473,8 @@ function renderSetup(){
     });
     // Add player button
     if(state.players.length<MAX_PLAYERS){
-      pcard.appendChild(btn({style:{width:"100%",padding:"10px",color:"#4ade80",fontSize:13,fontWeight:700,
-        borderTop:"1px solid #1a271a",background:"rgba(74,222,128,0.04)"},
+      pcard.appendChild(btn({style:{width:"100%",padding:"10px",color:"#3dd68c",fontSize:13,fontWeight:700,
+        borderTop:"1px solid #172a1e",background:"rgba(61,214,140,0.04)"},
         onClick:addPlayer},[`+ Add Player (${state.players.length}/${MAX_PLAYERS})`]));
     }
     inner.appendChild(pcard);
@@ -483,16 +483,16 @@ function renderSetup(){
     const rcard=div({className:"card",style:{marginBottom:14}},[]);
     rcard.appendChild(div({className:"card-header"},[span({},[" NUMBER OF ROUNDS"])]));
     const rcRow=div({style:{display:"flex",alignItems:"center",gap:10,padding:"12px 16px"}},[]);
-    rcRow.appendChild(span({style:{fontSize:13,color:"#6b8f6b",flex:1}},["Rounds in tournament"]));
+    rcRow.appendChild(span({style:{fontSize:13,color:"#5a8a6a",flex:1}},["Rounds in tournament"]));
     // Stepper
     const stepRow=div({style:{display:"flex",alignItems:"center",gap:12}},[]);
-    stepRow.appendChild(btn({style:{width:32,height:32,borderRadius:"50%",border:"1px solid #2a3d2a",color:"#6b8f6b",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"},
+    stepRow.appendChild(btn({style:{width:32,height:32,borderRadius:"50%",border:"1px solid #1f3326",color:"#5a8a6a",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"},
       onClick:()=>{
         if(state.rounds.length<=1)return;
         removeRound(state.rounds.length-1);
       }},["−"]));
-    stepRow.appendChild(span({style:{fontSize:20,fontWeight:800,color:"#4ade80",minWidth:24,textAlign:"center"}},[state.rounds.length+""]));
-    stepRow.appendChild(btn({style:{width:32,height:32,borderRadius:"50%",border:"1px solid #2a3d2a",color:"#6b8f6b",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"},
+    stepRow.appendChild(span({style:{fontSize:20,fontWeight:800,color:"#3dd68c",minWidth:24,textAlign:"center"}},[state.rounds.length+""]));
+    stepRow.appendChild(btn({style:{width:32,height:32,borderRadius:"50%",border:"1px solid #1f3326",color:"#5a8a6a",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"},
       onClick:()=>{
         if(state.rounds.length>=MAX_ROUNDS)return;
         addRound();
@@ -507,24 +507,41 @@ function renderSetup(){
     // Scoring settings
     const scard=div({className:"card",style:{marginBottom:24}},[]);
     scard.appendChild(div({className:"card-header"},[span({},[" SCORING SETTINGS"])]));
-    const srRow=div({className:"toggle-row"},[]);
-    srRow.appendChild(div({},[
-      div({style:{fontSize:14,fontWeight:700,color:"#e8f5e8",marginBottom:2}},["Use Slope & Rating"]),
-      div({style:{fontSize:11,color:"#6b8f6b"}},["Auto-calculates course handicap"]),
-    ]));
-    srRow.appendChild(toggleSwitch(state.useSlopeRating,v=>{state.useSlopeRating=v;scheduleSave();renderApp();}));
-    scard.appendChild(srRow);
-    const nmRow=div({className:"toggle-row",style:{borderBottom:"none"}},[]);
-    nmRow.appendChild(div({},[
-      div({style:{fontSize:14,fontWeight:700,color:"#e8f5e8",marginBottom:2}},["Enter Net Scores Directly"]),
-      div({style:{fontSize:11,color:"#6b8f6b"}},[state.netEntryMode?"Type adjusted net score per hole":"Type gross, app calculates net"]),
-    ]));
-    nmRow.appendChild(toggleSwitch(state.netEntryMode,v=>{state.netEntryMode=v;scheduleSave();renderApp();}));
-    scard.appendChild(nmRow);
+    // Three mutually exclusive scoring modes — only one on at a time
+    // Mode A: useSlopeRating=true,  netEntryMode=false  (default)
+    // Mode B: useSlopeRating=false, netEntryMode=false  (index only)
+    // Mode C: useSlopeRating=false, netEntryMode=true   (net direct)
+    const modes=[
+      {label:"Use Slope & Rating",  sub:"Auto-calculates course handicap from slope & rating",
+        active:!state.netEntryMode,
+        onSelect:()=>{state.useSlopeRating=true; state.netEntryMode=false;}},
+      {label:"Enter Net Directly",  sub:"Type your pre-adjusted net score per hole",
+        active:state.netEntryMode,
+        onSelect:()=>{state.useSlopeRating=false; state.netEntryMode=true;}},
+    ];
+    modes.forEach((m,mi)=>{
+      const row=div({style:{display:"flex",alignItems:"center",justifyContent:"space-between",
+        padding:"13px 18px",borderBottom:mi<modes.length-1?"1px solid #172a1e":"none",
+        cursor:"pointer",background:m.active?"rgba(61,214,140,0.05)":"transparent"},
+        onClick:()=>{m.onSelect();scheduleSave();renderApp();}
+      },[]);
+      row.appendChild(div({style:{flex:1}},[
+        div({style:{fontSize:14,fontWeight:700,color:m.active?"#3dd68c":"#eaf5ea",marginBottom:2}},[m.label]),
+        div({style:{fontSize:11,color:"#5a8a6a"}},[m.sub]),
+      ]));
+      // Radio-style indicator
+      row.appendChild(div({style:{width:22,height:22,borderRadius:"50%",flexShrink:0,marginLeft:12,
+        border:`2px solid ${m.active?"#3dd68c":"#1f3326"}`,
+        background:m.active?"rgba(61,214,140,0.2)":"transparent",
+        display:"flex",alignItems:"center",justifyContent:"center"}},[
+        m.active?div({style:{width:10,height:10,borderRadius:"50%",background:"#3dd68c"}},[]):null,
+      ].filter(Boolean)));
+      scard.appendChild(row);
+    });
     let modeNote=state.netEntryMode?"Enter pre-adjusted net score per hole. No automatic handicap calculation.":
       state.useSlopeRating?"Enter gross scores. Strokes auto-applied using slope, rating & hole index.":
       "Enter gross scores. Strokes applied using handicap index & hole index only.";
-    scard.appendChild(div({style:{padding:"10px 16px",background:"rgba(96,165,250,0.05)",borderTop:"1px solid #1a271a"}},[
+    scard.appendChild(div({style:{padding:"10px 16px",background:"rgba(96,165,250,0.05)",borderTop:"1px solid #172a1e"}},[
       span({style:{fontSize:11,color:"#60a5fa"}},[modeNote])
     ]));
     inner.appendChild(scard);
@@ -536,7 +553,7 @@ function renderSetup(){
     // ── Step 2: Rounds ──
     const inner=div({style:{padding:"16px",maxWidth:520,margin:"0 auto"}},[]);
     inner.appendChild(div({style:{textAlign:"center",marginBottom:16}},[
-      el("p",{style:{color:"#6b8f6b",fontSize:13,marginBottom:4}},["Step 2 of 2 — Rounds"]),
+      el("p",{style:{color:"#5a8a6a",fontSize:13,marginBottom:4}},["Step 2 of 2 — Rounds"]),
       el("p",{style:{color:"#4b5563",fontSize:11}},["Configure each round's course, pairings & hole data"]),
     ]));
 
@@ -544,13 +561,13 @@ function renderSetup(){
       const rcard=div({className:"card",style:{marginBottom:14}},[]);
 
       // Round header with course name + tee box
-      const rhead=div({style:{padding:"10px 14px",borderBottom:"1px solid #2a3d2a",background:"rgba(74,222,128,0.04)",display:"flex",alignItems:"center",gap:8}},[]);
+      const rhead=div({style:{padding:"10px 14px",borderBottom:"1px solid #1f3326",background:"rgba(61,214,140,0.04)",display:"flex",alignItems:"center",gap:8}},[]);
       const nameFields=div({style:{flex:1,display:"flex",flexDirection:"column",gap:4}},[]);
       const labelIn=selectOnFocus(inp({type:"text",value:r.label,placeholder:"Course name",
-        style:{background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,0.08)",color:"#e8f5e8",fontSize:14,fontWeight:800,outline:"none",paddingBottom:2}}));
+        style:{background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,0.08)",color:"#eaf5ea",fontSize:14,fontWeight:800,outline:"none",paddingBottom:2}}));
       labelIn.addEventListener("input",e=>{state.rounds[ri].label=e.target.value;scheduleSave();});
       const teeIn=selectOnFocus(inp({type:"text",value:r.teeBox||"",placeholder:"Tee box (e.g. Blue, White…)",
-        style:{background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,0.06)",color:"#9ab89a",fontSize:11,outline:"none",paddingBottom:2}}));
+        style:{background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,0.06)",color:"#6dbf8a",fontSize:11,outline:"none",paddingBottom:2}}));
       teeIn.addEventListener("input",e=>{state.rounds[ri].teeBox=e.target.value;scheduleSave();});
       nameFields.appendChild(labelIn);
       nameFields.appendChild(teeIn);
@@ -560,19 +577,19 @@ function renderSetup(){
         rhead.appendChild(btn({style:{color:"#f87171",fontSize:13,fontWeight:700,border:"1px solid rgba(239,68,68,0.3)",borderRadius:6,padding:"3px 8px",flexShrink:0},
           onClick:()=>removeRound(ri)},["✕"]));
       }
-      rhead.appendChild(btn({style:{border:"1px solid #2a3d2a",borderRadius:6,color:"#6b8f6b",fontSize:11,fontWeight:700,padding:"4px 8px",flexShrink:0},
+      rhead.appendChild(btn({style:{border:"1px solid #1f3326",borderRadius:6,color:"#5a8a6a",fontSize:11,fontWeight:700,padding:"4px 8px",flexShrink:0},
         onClick:()=>{state.expandedRound=state.expandedRound===ri?null:ri;renderApp();}},
         [state.expandedRound===ri?"▲":"▼"]));
       rcard.appendChild(rhead);
 
       // Team preview
       const teams=getTeams(ri);
-      const prev=div({style:{display:"flex",gap:6,padding:"8px 14px",borderBottom:state.expandedRound===ri?"1px solid #2a3d2a":"none",flexWrap:"wrap"}},[]);
+      const prev=div({style:{display:"flex",gap:6,padding:"8px 14px",borderBottom:state.expandedRound===ri?"1px solid #1f3326":"none",flexWrap:"wrap"}},[]);
       teams.forEach((team,ti)=>{
         const box=div({style:{flex:1,minWidth:80,padding:"6px 8px",borderRadius:8,
-          background:ti===0?"rgba(74,222,128,0.06)":"rgba(251,191,36,0.06)",
-          border:`1px solid ${ti===0?"rgba(74,222,128,0.2)":"rgba(251,191,36,0.2)"}`}},[]);
-        box.appendChild(div({style:{fontSize:9,fontWeight:700,color:ti===0?"#4ade80":"#fbbf24",marginBottom:3,letterSpacing:"0.06em"}},["TEAM "+(ti===0?"A":"B")]));
+          background:ti===0?"rgba(61,214,140,0.06)":"rgba(251,191,36,0.06)",
+          border:`1px solid ${ti===0?"rgba(61,214,140,0.2)":"rgba(251,191,36,0.2)"}`}},[]);
+        box.appendChild(div({style:{fontSize:9,fontWeight:700,color:ti===0?"#3dd68c":"#fbbf24",marginBottom:3,letterSpacing:"0.06em"}},["TEAM "+(ti===0?"A":"B")]));
         if(team.length===0){
           box.appendChild(div({style:{fontSize:11,color:"#4b5563",fontStyle:"italic"}},["Empty"]));
         } else {
@@ -585,18 +602,18 @@ function renderSetup(){
       const sittingOut=state.players.map((_,i)=>i).filter(i=>!allInTeams.includes(i));
       if(sittingOut.length>0){
         const sb=div({style:{padding:"4px 8px",borderRadius:8,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)"}},[]);
-        sb.appendChild(div({style:{fontSize:9,fontWeight:700,color:"#6b8f6b",marginBottom:3}},["SITTING OUT"]));
-        sittingOut.forEach(idx=>sb.appendChild(div({style:{fontSize:11,color:"#6b8f6b"}},[state.players[idx]?.name||`P${idx+1}`])));
+        sb.appendChild(div({style:{fontSize:9,fontWeight:700,color:"#5a8a6a",marginBottom:3}},["SITTING OUT"]));
+        sittingOut.forEach(idx=>sb.appendChild(div({style:{fontSize:11,color:"#5a8a6a"}},[state.players[idx]?.name||`P${idx+1}`])));
         prev.appendChild(sb);
       }
       rcard.appendChild(prev);
 
       if(state.expandedRound===ri){
         // ── Pairings ──
-        rcard.appendChild(div({style:{padding:"7px 14px",background:"rgba(74,222,128,0.03)",borderBottom:"1px solid #1a271a"}},[
-          span({style:{fontSize:11,fontWeight:700,color:"#6b8f6b",letterSpacing:"0.06em"}},["TEAM ASSIGNMENTS"])
+        rcard.appendChild(div({style:{padding:"7px 14px",background:"rgba(61,214,140,0.03)",borderBottom:"1px solid #172a1e"}},[
+          span({style:{fontSize:11,fontWeight:700,color:"#5a8a6a",letterSpacing:"0.06em"}},["TEAM ASSIGNMENTS"])
         ]));
-        rcard.appendChild(div({style:{padding:"8px 14px",borderBottom:"1px solid #1a271a"}},[
+        rcard.appendChild(div({style:{padding:"8px 14px",borderBottom:"1px solid #172a1e"}},[
           span({style:{fontSize:11,color:"#4b5563"}},["Tap a player to assign them to Team A, Team B, or sit out."])
         ]));
 
@@ -605,11 +622,11 @@ function renderSetup(){
           const inT1=teams[0].includes(pi);
           const inT2=teams[1].includes(pi);
           const sitOut=!inT1&&!inT2;
-          const prow=div({style:{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",borderBottom:"1px solid #1a271a"}},[]);
+          const prow=div({style:{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",borderBottom:"1px solid #172a1e"}},[]);
           prow.appendChild(div({style:{width:24,height:24,borderRadius:"50%",background:pcolor(pi)+"20",border:`1.5px solid ${pcolor(pi)}50`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:pcolor(pi),flexShrink:0}},[(pi+1)+""]) );
-          prow.appendChild(span({style:{flex:1,fontSize:13,fontWeight:600,color:"#e8f5e8"}},[p.name]));
+          prow.appendChild(span({style:{flex:1,fontSize:13,fontWeight:600,color:"#eaf5ea"}},[p.name]));
           // Team A / Team B / Sit Out buttons
-          const choices=[["A",0,"#4ade80",inT1],["B",1,"#fbbf24",inT2],["—",-1,"#6b8f6b",sitOut]];
+          const choices=[["A",0,"#3dd68c",inT1],["B",1,"#fbbf24",inT2],["—",-1,"#5a8a6a",sitOut]];
           choices.forEach(([lbl,tidx,col,active])=>{
             prow.appendChild(btn({
               style:{padding:"4px 10px",borderRadius:6,fontSize:12,fontWeight:700,
@@ -623,38 +640,38 @@ function renderSetup(){
         });
 
         // ── Course Setup ──
-        rcard.appendChild(div({style:{padding:"7px 14px",background:"rgba(96,165,250,0.03)",borderTop:"1px solid #1a271a",borderBottom:"1px solid #1a271a"}},[
-          span({style:{fontSize:11,fontWeight:700,color:"#6b8f6b",letterSpacing:"0.06em"}},["COURSE SETUP"])
+        rcard.appendChild(div({style:{padding:"7px 14px",background:"rgba(96,165,250,0.03)",borderTop:"1px solid #172a1e",borderBottom:"1px solid #172a1e"}},[
+          span({style:{fontSize:11,fontWeight:700,color:"#5a8a6a",letterSpacing:"0.06em"}},["COURSE SETUP"])
         ]));
         const totalPar=r.pars.reduce((s,p)=>s+(parseInt(p)||0),0);
-        const courseRow=div({style:{padding:"10px 14px",borderBottom:"1px solid #1a271a",display:"flex",gap:12,flexWrap:"wrap",alignItems:"center"}},[]);
+        const courseRow=div({style:{padding:"10px 14px",borderBottom:"1px solid #172a1e",display:"flex",gap:12,flexWrap:"wrap",alignItems:"center"}},[]);
         if(state.useSlopeRating){
           [["Rating",r.courseRating,"courseRating",4],["Slope",r.courseSlope,"courseSlope",3]].forEach(([lbl,val,field,maxl])=>{
             const g=div({style:{display:"flex",alignItems:"center",gap:5}},[]);
-            g.appendChild(span({style:{fontSize:11,color:"#6b8f6b"}},[lbl]));
+            g.appendChild(span({style:{fontSize:11,color:"#5a8a6a"}},[lbl]));
             const si=inp({type:"text",inputmode:"decimal",pattern:"[0-9.]*",maxlength:maxl+"",value:val,
-              style:{width:field==="courseRating"?"56px":"50px",height:28,background:"rgba(255,255,255,0.05)",border:"1px solid #2a3d2a",borderRadius:6,color:"#4ade80",fontSize:13,fontWeight:700,textAlign:"center",outline:"none"}});
+              style:{width:field==="courseRating"?"56px":"50px",height:28,background:"rgba(255,255,255,0.05)",border:"1px solid #1f3326",borderRadius:6,color:"#3dd68c",fontSize:13,fontWeight:700,textAlign:"center",outline:"none"}});
             si.addEventListener("input",e=>{const v=e.target.value.replace(/[^0-9.]/g,"");e.target.value=v;state.rounds[ri][field]=v;scheduleSave();});
             g.appendChild(si);courseRow.appendChild(g);
           });
         }
         courseRow.appendChild(div({style:{display:"flex",alignItems:"center",gap:5}},[
-          span({style:{fontSize:11,color:"#6b8f6b"}},["Total Par"]),
-          span({style:{fontSize:13,fontWeight:700,color:"#9ab89a"}},[totalPar+""]),
+          span({style:{fontSize:11,color:"#5a8a6a"}},["Total Par"]),
+          span({style:{fontSize:13,fontWeight:700,color:"#6dbf8a"}},[totalPar+""]),
         ]));
         rcard.appendChild(courseRow);
 
         // Hole grid
         const grid=div({style:{padding:"8px 12px",overflowX:"auto"}},[]);
         const clearRow=div({style:{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}},[]);
-        clearRow.appendChild(btn({style:{fontSize:11,fontWeight:700,color:"#9ab89a",background:"rgba(154,184,154,0.1)",border:"1px solid rgba(154,184,154,0.25)",borderRadius:6,padding:"4px 8px"},
+        clearRow.appendChild(btn({style:{fontSize:11,fontWeight:700,color:"#6dbf8a",background:"rgba(154,184,154,0.1)",border:"1px solid rgba(154,184,154,0.25)",borderRadius:6,padding:"4px 8px"},
           onClick:()=>{state.rounds[ri].pars=Array(18).fill("");scheduleSave();renderApp();}},["✕ Clear PAR"]));
-        clearRow.appendChild(btn({style:{fontSize:11,fontWeight:700,color:"#9ab89a",background:"rgba(154,184,154,0.1)",border:"1px solid rgba(154,184,154,0.25)",borderRadius:6,padding:"4px 8px"},
+        clearRow.appendChild(btn({style:{fontSize:11,fontWeight:700,color:"#6dbf8a",background:"rgba(154,184,154,0.1)",border:"1px solid rgba(154,184,154,0.25)",borderRadius:6,padding:"4px 8px"},
           onClick:()=>{state.rounds[ri].pars=[...DEFAULT_PARS];scheduleSave();renderApp();}},["↺ Reset PAR"]));
         if(!state.netEntryMode){
           clearRow.appendChild(btn({style:{fontSize:11,fontWeight:700,color:"#60a5fa",background:"rgba(96,165,250,0.1)",border:"1px solid rgba(96,165,250,0.25)",borderRadius:6,padding:"4px 8px"},
             onClick:()=>{state.rounds[ri].hcpIdx=Array(18).fill("");scheduleSave();renderApp();}},["✕ Clear HCP"]));
-          clearRow.appendChild(btn({style:{fontSize:11,fontWeight:700,color:"#6b8f6b",background:"rgba(107,143,107,0.1)",border:"1px solid rgba(107,143,107,0.25)",borderRadius:6,padding:"4px 8px"},
+          clearRow.appendChild(btn({style:{fontSize:11,fontWeight:700,color:"#5a8a6a",background:"rgba(107,143,107,0.1)",border:"1px solid rgba(107,143,107,0.25)",borderRadius:6,padding:"4px 8px"},
             onClick:()=>{state.rounds[ri].hcpIdx=[...DEFAULT_HCP];scheduleSave();renderApp();}},["↺ Reset HCP"]));
         }
         grid.appendChild(clearRow);
@@ -671,7 +688,7 @@ function renderSetup(){
           allHcpInputs.forEach((inp,h)=>{
             const v=parseInt(state.rounds[ri].hcpIdx[h]);
             const isDup=!isNaN(v)&&dups.has(v);
-            inp.style.border=isDup?"1px solid rgba(251,191,36,0.7)":"1px solid #2a3d2a";
+            inp.style.border=isDup?"1px solid rgba(251,191,36,0.7)":"1px solid #1f3326";
             inp.style.background=isDup?"rgba(251,191,36,0.12)":"rgba(255,255,255,0.04)";
             inp.style.color=isDup?"#fbbf24":"#60a5fa";
           });
@@ -685,20 +702,20 @@ function renderSetup(){
         [0,1].forEach(half=>{
           grid.appendChild(div({style:{display:"grid",gridTemplateColumns:"28px repeat(9,1fr)",gap:3,marginBottom:3}},[
             span({},[]),
-            ...Array.from({length:9},(_,i)=>span({style:{fontSize:10,color:"#6b8f6b",textAlign:"center",fontWeight:700}},[(half*9+i+1)+""]))
+            ...Array.from({length:9},(_,i)=>span({style:{fontSize:10,color:"#5a8a6a",textAlign:"center",fontWeight:700}},[(half*9+i+1)+""]))
           ]));
-          const parRows=[["PAR",r.pars,(h,v)=>{state.rounds[ri].pars[half*9+h]=v===""?"":parseInt(v)||state.rounds[ri].pars[half*9+h];scheduleSave();},"#9ab89a",allParInputs]];
+          const parRows=[["PAR",r.pars,(h,v)=>{state.rounds[ri].pars[half*9+h]=v===""?"":parseInt(v)||state.rounds[ri].pars[half*9+h];scheduleSave();},"#6dbf8a",allParInputs]];
           if(!state.netEntryMode){
             parRows.push(["HCP",r.hcpIdx,(h,v)=>{state.rounds[ri].hcpIdx[half*9+h]=v===""?"":parseInt(v)||state.rounds[ri].hcpIdx[half*9+h];scheduleSave();refreshHcpHighlights();},"#60a5fa",allHcpInputs]);
           }
           parRows.forEach(([lbl,vals,fn,col,allInputs])=>{
             const isPar=lbl==="PAR";
             const row=div({style:{display:"grid",gridTemplateColumns:"28px repeat(9,1fr)",gap:3,marginBottom:3}},[
-              span({style:{fontSize:9,color:"#6b8f6b",textAlign:"center",alignSelf:"center",fontWeight:700}},[lbl])
+              span({style:{fontSize:9,color:"#5a8a6a",textAlign:"center",alignSelf:"center",fontWeight:700}},[lbl])
             ]);
             vals.slice(half*9,half*9+9).forEach((v,i)=>{
               const gi=inp({type:"text",inputmode:"numeric",pattern:"[0-9]*",maxlength:"2",value:v+"",
-                style:{width:"100%",height:28,background:"rgba(255,255,255,0.04)",border:"1px solid #2a3d2a",borderRadius:5,color:col,fontSize:12,fontWeight:700,textAlign:"center",outline:"none"}});
+                style:{width:"100%",height:28,background:"rgba(255,255,255,0.04)",border:"1px solid #1f3326",borderRadius:5,color:col,fontSize:12,fontWeight:700,textAlign:"center",outline:"none"}});
               allInputs.push(gi);
               let hcpAdvanceTimer=null;
               gi.addEventListener("input",e=>{
@@ -749,8 +766,8 @@ function renderSetup(){
 
     // Add round button
     if(state.rounds.length<MAX_ROUNDS){
-      inner.appendChild(btn({style:{width:"100%",padding:"12px",marginBottom:14,color:"#4ade80",fontSize:13,fontWeight:700,
-        border:"1px dashed rgba(74,222,128,0.3)",borderRadius:12,background:"rgba(74,222,128,0.04)"},
+      inner.appendChild(btn({style:{width:"100%",padding:"12px",marginBottom:14,color:"#3dd68c",fontSize:13,fontWeight:700,
+        border:"1px dashed rgba(61,214,140,0.3)",borderRadius:12,background:"rgba(61,214,140,0.04)"},
         onClick:addRound},[`+ Add Round (${state.rounds.length}/${MAX_ROUNDS})`]));
     }
 
@@ -765,17 +782,17 @@ function renderSetup(){
 
 // ─── Home ─────────────────────────────────────────────────────────────────────
 function renderHome(){
-  const wrap=div({style:{minHeight:"100vh",background:"#0f1a0f"}},[]);
+  const wrap=div({style:{minHeight:"100vh",background:"#0a1510"}},[]);
   const topbar=div({className:"topbar"},[]);
   const toprow=div({style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}},[]);
   toprow.appendChild(div({style:{display:"flex",alignItems:"center",gap:8}},[
     span({style:{fontSize:20}},["⛳"]),
     div({},[
       div({style:{display:"flex",alignItems:"center",gap:6}},[
-        div({style:{fontSize:15,fontWeight:800,color:"#4ade80"}},["Match Play Scorer"]),
+        div({style:{fontSize:15,fontWeight:800,color:"#3dd68c"}},["Match Play Scorer"]),
         span({className:"save-status",style:{fontSize:10,fontWeight:700,marginLeft:6}},[]),
       ]),
-      div({style:{fontSize:11,color:"#6b8f6b"}},[
+      div({style:{fontSize:11,color:"#5a8a6a"}},[
         state.netEntryMode?"Net Entry":state.useSlopeRating?"Slope/Rating On":"Index Only",
         " · "+state.players.length+" players · "+state.rounds.length+" rounds",
       ]),
@@ -783,7 +800,7 @@ function renderHome(){
   ]));
   const rbtnRow=div({style:{display:"flex",gap:6,alignItems:"center"}},[]);
   rbtnRow.appendChild(btn({style:{color:"#f87171",fontSize:14,fontWeight:700,padding:"8px 14px",lineHeight:1,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10},onClick:handleReset},["Reset All"]));
-  rbtnRow.appendChild(btn({style:{color:"#e8f5e8",fontSize:14,fontWeight:700,padding:"8px 14px",lineHeight:1,background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10},onClick:()=>{state.screen="setup";state.setupStep=0;renderApp();}},["Setup"]));
+  rbtnRow.appendChild(btn({style:{color:"#eaf5ea",fontSize:14,fontWeight:700,padding:"8px 14px",lineHeight:1,background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10},onClick:()=>{state.screen="setup";state.setupStep=0;renderApp();}},["Setup"]));
   toprow.appendChild(rbtnRow);
   topbar.appendChild(toprow);
   const tabs=div({className:"tabs"},[]);
@@ -802,23 +819,23 @@ function renderLeaderboard(){
   const ranked=[...state.players.map((p,i)=>({...p,idx:i,pts:pts[i]}))].sort((a,b)=>b.pts-a.pts);
   const wrap=div({style:{padding:"14px",maxWidth:500,margin:"0 auto"}},[]);
   wrap.appendChild(div({style:{textAlign:"center",marginBottom:16}},[
-    div({style:{fontSize:11,fontWeight:700,color:"#6b8f6b",letterSpacing:"0.08em",marginBottom:4}},["OVERALL STANDINGS"]),
+    div({style:{fontSize:11,fontWeight:700,color:"#5a8a6a",letterSpacing:"0.08em",marginBottom:4}},["OVERALL STANDINGS"]),
     div({style:{fontSize:11,color:"#4b5563"}},["Win=1pt · Halve=0.5pt · Loss=0pts"]),
   ]));
   const card=div({className:"card",style:{marginBottom:20}},[]);
   ranked.forEach((p,rank)=>{
     const isLead=rank===0&&p.pts>0;
     const row=div({style:{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",
-      borderBottom:rank<ranked.length-1?"1px solid #1a271a":"none",
+      borderBottom:rank<ranked.length-1?"1px solid #172a1e":"none",
       background:isLead?"rgba(251,191,36,0.03)":"transparent"}},[]);
     row.appendChild(div({style:{width:24,height:24,borderRadius:"50%",flexShrink:0,
       background:isLead?"rgba(251,191,36,0.2)":"rgba(255,255,255,0.04)",
       display:"flex",alignItems:"center",justifyContent:"center",
-      fontSize:12,fontWeight:800,color:isLead?"#fbbf24":"#6b8f6b"}},[(rank+1)+""]))
+      fontSize:12,fontWeight:800,color:isLead?"#fbbf24":"#5a8a6a"}},[(rank+1)+""]))
     row.appendChild(playerDot(p.idx));
     row.appendChild(div({style:{flex:1}},[
-      div({style:{fontSize:14,fontWeight:700,color:"#e8f5e8"}},[p.name]),
-      div({style:{fontSize:11,color:"#6b8f6b"}},["HCP "+p.handicap]),
+      div({style:{fontSize:14,fontWeight:700,color:"#eaf5ea"}},[p.name]),
+      div({style:{fontSize:11,color:"#5a8a6a"}},["HCP "+p.handicap]),
     ]));
     const tiles=div({style:{display:"flex",gap:3}},[]);
     state.rounds.forEach((r,ri)=>{
@@ -827,69 +844,64 @@ function renderLeaderboard(){
       const has=[...teams[0],...teams[1]].some(pi=>state.scores[ri]?.[pi]?.some(s=>s!==""));
       let tpts=null;
       if(has&&(inT1||inT2))tpts=inT1?rds[ri].w1:rds[ri].w2;
-      const tc=tpts===1?"rgba(74,222,128,0.15)":tpts===0.5?"rgba(148,163,184,0.1)":tpts===0&&tpts!==null?"rgba(239,68,68,0.1)":"rgba(255,255,255,0.04)";
-      const bc=tpts===1?"rgba(74,222,128,0.3)":tpts===0.5?"rgba(148,163,184,0.2)":tpts===0&&tpts!==null?"rgba(239,68,68,0.2)":"rgba(255,255,255,0.06)";
-      const fc=tpts===1?"#4ade80":tpts===0.5?"#94a3b8":tpts===0&&tpts!==null?"#f87171":"#4b5563";
+      const tc=tpts===1?"rgba(61,214,140,0.15)":tpts===0.5?"rgba(148,163,184,0.1)":tpts===0&&tpts!==null?"rgba(239,68,68,0.1)":"rgba(255,255,255,0.04)";
+      const bc=tpts===1?"rgba(61,214,140,0.3)":tpts===0.5?"rgba(148,163,184,0.2)":tpts===0&&tpts!==null?"rgba(239,68,68,0.2)":"rgba(255,255,255,0.06)";
+      const fc=tpts===1?"#3dd68c":tpts===0.5?"#94a3b8":tpts===0&&tpts!==null?"#f87171":"#4b5563";
       const tLabel=tpts===0.5?"½":tpts!==null?tpts+"":"·";
       tiles.appendChild(div({style:{width:22,height:22,borderRadius:4,background:tc,border:`1px solid ${bc}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:fc}},[tLabel]));
     });
     row.appendChild(tiles);
     row.appendChild(div({style:{textAlign:"right",minWidth:36}},[
       div({style:{fontSize:24,fontWeight:900,color:pcolor(p.idx),lineHeight:1}},[(p.pts)+""]),
-      div({style:{fontSize:10,color:"#6b8f6b"}},["pts"]),
+      div({style:{fontSize:10,color:"#5a8a6a"}},["pts"]),
     ]));
     card.appendChild(row);
   });
   wrap.appendChild(card);
-  wrap.appendChild(div({style:{fontSize:11,fontWeight:700,color:"#6b8f6b",letterSpacing:"0.08em",marginBottom:10}},["ROUND RESULTS"]));
+  wrap.appendChild(div({style:{fontSize:11,fontWeight:700,color:"#5a8a6a",letterSpacing:"0.08em",marginBottom:10}},["ROUND RESULTS"]));
   state.rounds.forEach((r,ri)=>{
     const rd=rds[ri];
     const{t1,t2}=rd;
     const has=[...t1,...t2].some(pi=>state.scores[ri]?.[pi]?.some(s=>s!==""));
     const rc=div({className:"card",style:{marginBottom:10}},[]);
-    const rh=div({style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 12px",borderBottom:"1px solid #1a271a",background:"rgba(74,222,128,0.03)"}},[]);
+    const rh=div({style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 12px",borderBottom:"1px solid #172a1e",background:"rgba(61,214,140,0.03)"}},[]);
     rh.appendChild(div({},[
-      div({style:{fontSize:13,fontWeight:700,color:"#e8f5e8"}},[r.label+(r.teeBox?" — "+r.teeBox:"")]),
+      div({style:{fontSize:13,fontWeight:700,color:"#eaf5ea"}},[r.label+(r.teeBox?" — "+r.teeBox:"")]),
       div({style:{fontSize:10,color:"#4b5563"}},[(state.useSlopeRating&&!state.netEntryMode?"Rating "+r.courseRating+" · Slope "+r.courseSlope:state.netEntryMode?"Net Entry":"Index Only")]),
     ]));
-    rh.appendChild(btn({style:{background:"rgba(74,222,128,0.1)",border:"1px solid rgba(74,222,128,0.2)",borderRadius:6,color:"#4ade80",fontSize:11,fontWeight:700,padding:"4px 10px"},
+    rh.appendChild(btn({style:{background:"rgba(61,214,140,0.1)",border:"1px solid rgba(61,214,140,0.2)",borderRadius:6,color:"#3dd68c",fontSize:11,fontWeight:700,padding:"4px 10px"},
       onClick:()=>{state.activeRound=ri;state.screen="scorecard";renderApp();}},
       [has?"Edit":"Score"]));
     rc.appendChild(rh);
     const rb=div({style:{padding:"12px 14px"}},[]);
-    [[t1,"#4ade80","p1"],[t2,"#fbbf24","p2"]].forEach(([team,col,side],ti)=>{
+    [[t1,"#3dd68c","p1"],[t2,"#fbbf24","p2"]].forEach(([team,col,side],ti)=>{
       const pr=div({style:{display:"flex",alignItems:"center",justifyContent:"space-between",
-        padding:"8px 0",borderBottom:ti===0?"1px solid #1a271a":"none"}},[]);
+        padding:"8px 0",borderBottom:ti===0?"1px solid #172a1e":"none"}},[]);
       // Left: player names stacked
       const pnames=div({style:{flex:1,display:"flex",flexDirection:"column",gap:2}},[]);
-      const teamLabel=div({style:{fontSize:10,fontWeight:700,color:ti===0?"#4ade80":"#fbbf24",
+      const teamLabel=div({style:{fontSize:10,fontWeight:700,color:ti===0?"#3dd68c":"#fbbf24",
         letterSpacing:"0.06em",marginBottom:2}},["TEAM "+(ti===0?"A":"B")]);
       pnames.appendChild(teamLabel);
       if(team.length===0){pnames.appendChild(span({style:{fontSize:12,color:"#4b5563"}},["(empty)"]));}
       else team.forEach(idx=>pnames.appendChild(span({style:{fontSize:13,fontWeight:600,color:pcolor(idx)}},[state.players[idx]?.name||"?"])));
       pr.appendChild(pnames);
-      // Right: three clearly spaced stat lines
-      const pright=div({style:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,minWidth:90}},[]);
+      // Right: three stacked stat rows — label on left, number on right, clear gap
+      const pright=div({style:{display:"flex",flexDirection:"column",alignItems:"stretch",gap:8,minWidth:110}},[]);
       if(has){
         const won=side==="p1"?rd.p1w:rd.p2w;
         const isWin=rd.leader===side;
         const pts=side==="p1"?rd.w1:rd.w2;
         const ptsLabel=pts===0.5?"½":pts+"";
-        // Net score line
-        pright.appendChild(div({style:{display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}},[
-          span({style:{fontSize:10,color:"#6b8f6b"}},[" Net "]),
-          diffLabel(side==="p1"?rd.p1diff:rd.p2diff),
-        ]));
-        // Holes won line
-        pright.appendChild(div({style:{display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}},[
-          span({style:{fontSize:10,color:"#6b8f6b"}},[" Holes "]),
-          span({style:{fontSize:13,fontWeight:700,color:isWin?col:"#9ab89a"}},[won+""]),
-        ]));
-        // Points line
-        pright.appendChild(div({style:{display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}},[
-          span({style:{fontSize:10,color:"#6b8f6b"}},[" Pts "]),
-          span({style:{fontSize:18,fontWeight:900,color:isWin?col:"#6b8f6b",lineHeight:1}},[ptsLabel]),
-        ]));
+        [
+          {label:"Net",   value:diffLabel(side==="p1"?rd.p1diff:rd.p2diff)},
+          {label:"Holes", value:span({style:{fontSize:15,fontWeight:800,color:isWin?col:"#6dbf8a"}},[won+""])},
+          {label:"Pts",   value:span({style:{fontSize:20,fontWeight:900,color:isWin?col:"#5a8a6a",lineHeight:1}},[ptsLabel])},
+        ].forEach(({label,value})=>{
+          pright.appendChild(div({style:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:16}},[
+            span({style:{fontSize:11,fontWeight:600,color:"#5a8a6a",letterSpacing:"0.04em"}},[label]),
+            value,
+          ]));
+        });
       } else {
         pright.appendChild(span({style:{fontSize:13,color:"#4b5563"}},["—"]));
       }
@@ -897,8 +909,8 @@ function renderLeaderboard(){
       rb.appendChild(pr);
     });
     if(has)rb.appendChild(div({style:{paddingTop:8,display:"flex",justifyContent:"space-between",alignItems:"center"}},[
-      span({style:{fontSize:11,color:"#6b8f6b"}},[rd.halves+" holes halved"]),
-      span({style:{fontSize:13,fontWeight:700,color:rd.leader==="none"?"#94a3b8":rd.leader==="p1"?"#4ade80":"#fbbf24"}},[rd.leader==="none"?"All Square":rd.matchStr]),
+      span({style:{fontSize:11,color:"#5a8a6a"}},[rd.halves+" holes halved"]),
+      span({style:{fontSize:13,fontWeight:700,color:rd.leader==="none"?"#94a3b8":rd.leader==="p1"?"#3dd68c":"#fbbf24"}},[rd.leader==="none"?"All Square":rd.matchStr]),
     ]));
     rc.appendChild(rb);
     wrap.appendChild(rc);
@@ -908,8 +920,8 @@ function renderLeaderboard(){
   const APP_URL="https://suszanma.github.io/golf-scorer/leaderboard.html";
   const shareSection=div({style:{margin:"20px 0 8px",textAlign:"center"}},[]);
   shareSection.appendChild(btn({
-    style:{padding:"12px 24px",borderRadius:12,border:"1px solid rgba(74,222,128,0.3)",
-      background:"rgba(74,222,128,0.06)",color:"#4ade80",fontSize:14,fontWeight:700,
+    style:{padding:"12px 24px",borderRadius:12,border:"1px solid rgba(61,214,140,0.3)",
+      background:"rgba(61,214,140,0.06)",color:"#3dd68c",fontSize:14,fontWeight:700,
       display:"inline-flex",alignItems:"center",gap:8},
     onClick:()=>showQRModal(APP_URL)
   },[
@@ -943,6 +955,12 @@ function renderLeaderboard(){
     {v:"v2.9",  desc:"Auto-advance score entry across players and holes"},
     {v:"v3.0",  desc:"Firebase Realtime Database — live shared scoring across devices"},
     {v:"v3.1",  desc:"Share button with QR code, version history footer"},
+    {v:"v3.2",  desc:"Option D UI — polished green theme, system fonts, refined cards & buttons"},
+    {v:"v3.3",  desc:"Round result stats redesigned: label above number, better spacing"},
+    {v:"v3.4",  desc:"Auto-incrementing version number on each update"},
+    {v:"v3.5",  desc:"Round results stats: stacked label+number layout with clear spacing"},
+    {v:"v3.6",  desc:"Scoring settings: mutually exclusive radio-style selection (only one mode active)"},
+    {v:"v3.7",  desc:"Scoring settings simplified to two options: Slope & Rating or Net Direct"},
   ];
 
   const vwrap=div({style:{margin:"24px 0 32px",padding:"0 4px"}},[]);
@@ -961,14 +979,14 @@ function renderLeaderboard(){
     const isLatest=i===0;
     vlist.appendChild(div({style:{
       display:"flex",gap:10,padding:"7px 0",
-      borderBottom:i<versions.length-1?"1px solid #1a271a":"none",
+      borderBottom:i<versions.length-1?"1px solid #172a1e":"none",
       alignItems:"flex-start"
     }},[
-      span({style:{fontSize:11,fontWeight:800,color:isLatest?"#4ade80":"#4b5563",
+      span({style:{fontSize:11,fontWeight:800,color:isLatest?"#3dd68c":"#4b5563",
         minWidth:36,flexShrink:0,lineHeight:1.6}},[ver.v]),
-      span({style:{fontSize:11,color:isLatest?"#9ab89a":"#4b5563",lineHeight:1.6}},[ver.desc]),
-      ...(isLatest?[span({style:{fontSize:9,fontWeight:700,color:"#4ade80",background:"rgba(74,222,128,0.12)",
-        border:"1px solid rgba(74,222,128,0.3)",borderRadius:4,padding:"1px 5px",flexShrink:0,alignSelf:"center"}},["CURRENT"])]:[] ),
+      span({style:{fontSize:11,color:isLatest?"#6dbf8a":"#4b5563",lineHeight:1.6}},[ver.desc]),
+      ...(isLatest?[span({style:{fontSize:9,fontWeight:700,color:"#3dd68c",background:"rgba(61,214,140,0.12)",
+        border:"1px solid rgba(61,214,140,0.3)",borderRadius:4,padding:"1px 5px",flexShrink:0,alignSelf:"center"}},["CURRENT"])]:[] ),
     ]));
   });
   vwrap.appendChild(vlist);
@@ -983,24 +1001,24 @@ function renderRoundsList(){
     const rd=computeRound(ri);
     const{t1,t2}=rd;
     const has=[...t1,...t2].some(pi=>state.scores[ri]?.[pi]?.some(s=>s!==""));
-    const rb=btn({style:{display:"block",width:"100%",textAlign:"left",background:"#1c2a1c",border:"1px solid #2a3d2a",borderRadius:14,padding:"14px",marginBottom:10,color:"#e8f5e8"},
+    const rb=btn({style:{display:"block",width:"100%",textAlign:"left",background:"#122018",border:"1px solid #1f3326",borderRadius:14,padding:"14px",marginBottom:10,color:"#eaf5ea"},
       onClick:()=>{state.activeRound=ri;state.screen="scorecard";renderApp();}});
     const rh=div({style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}},[]);
     rh.appendChild(div({},[
       div({style:{fontSize:14,fontWeight:800}},[r.label+(r.teeBox?" — "+r.teeBox:"")]),
       div({style:{fontSize:10,color:"#4b5563"}},[(state.useSlopeRating&&!state.netEntryMode?"Rating "+r.courseRating+" · Slope "+r.courseSlope:state.netEntryMode?"Net Entry":"Index Only")]),
     ]));
-    rh.appendChild(has?span({style:{fontSize:12,fontWeight:700,color:rd.leader==="none"?"#94a3b8":rd.leader==="p1"?"#4ade80":"#fbbf24"}},[rd.leader==="none"?"A/S":rd.matchStr]):
-      span({style:{fontSize:11,color:"#4ade80",background:"rgba(74,222,128,0.1)",padding:"3px 8px",borderRadius:5}},["Not Started"]));
+    rh.appendChild(has?span({style:{fontSize:12,fontWeight:700,color:rd.leader==="none"?"#94a3b8":rd.leader==="p1"?"#3dd68c":"#fbbf24"}},[rd.leader==="none"?"A/S":rd.matchStr]):
+      span({style:{fontSize:11,color:"#3dd68c",background:"rgba(61,214,140,0.1)",padding:"3px 8px",borderRadius:5}},["Not Started"]));
     rb.appendChild(rh);
     const pairs=div({style:{display:"flex",gap:6}},[]);
-    [[t1,"#4ade80",rd.p1w],[t2,"#fbbf24",rd.p2w]].forEach(([team,col,won],ti)=>{
+    [[t1,"#3dd68c",rd.p1w],[t2,"#fbbf24",rd.p2w]].forEach(([team,col,won],ti)=>{
       const pb=div({style:{flex:1,padding:"6px 8px",borderRadius:8,
-        background:ti===0?"rgba(74,222,128,0.05)":"rgba(251,191,36,0.05)",
-        border:`1px solid ${ti===0?"rgba(74,222,128,0.15)":"rgba(251,191,36,0.15)"}`}},[]);
+        background:ti===0?"rgba(61,214,140,0.05)":"rgba(251,191,36,0.05)",
+        border:`1px solid ${ti===0?"rgba(61,214,140,0.15)":"rgba(251,191,36,0.15)"}`}},[]);
       if(team.length===0)pb.appendChild(div({style:{fontSize:11,color:"#4b5563",fontStyle:"italic"}},["Empty"]));
       else team.forEach(idx=>pb.appendChild(div({style:{fontSize:11,fontWeight:600,color:pcolor(idx)}},[state.players[idx]?.name||`P${idx+1}`])));
-      if(has)pb.appendChild(div({style:{fontSize:10,color:"#6b8f6b",marginTop:2}},[won+" holes won"]));
+      if(has)pb.appendChild(div({style:{fontSize:10,color:"#5a8a6a",marginTop:2}},[won+" holes won"]));
       pairs.appendChild(pb);
     });
     rb.appendChild(pairs);
@@ -1012,7 +1030,7 @@ function renderRoundsList(){
 // ─── Scorecard ────────────────────────────────────────────────────────────────
 let scorecardRoot=null;
 function renderScorecard(){
-  const wrap=div({style:{minHeight:"100vh",background:"#0f1a0f"}},[]);
+  const wrap=div({style:{minHeight:"100vh",background:"#0a1510"}},[]);
   scorecardRoot=wrap;
   const inner=div({style:{maxWidth:520,margin:"0 auto"}},[]);
   inner.appendChild(buildScorecardContent(state.activeRound));
@@ -1034,12 +1052,12 @@ function buildScorecardContent(ri){
   const diff=rd.p1w-rd.p2w;
   const sLabel=diff===0&&rd.p1w===0?"Not Started":diff===0?"All Square":
     `${(diff>0?t1:t2).map(i=>state.players[i]?.name.split(" ")[0]||"?").join("&")} ${Math.abs(diff)} UP`;
-  const sColor=diff===0&&rd.p1w===0?"#6b8f6b":diff===0?"#94a3b8":diff>0?"#4ade80":"#fbbf24";
+  const sColor=diff===0&&rd.p1w===0?"#5a8a6a":diff===0?"#94a3b8":diff>0?"#3dd68c":"#fbbf24";
 
   // Header
-  const head=div({style:{position:"sticky",top:0,zIndex:10,background:"#0f1a0f",borderBottom:"1px solid #2a3d2a",padding:"10px 12px 8px"}},[]);
+  const head=div({style:{position:"sticky",top:0,zIndex:10,background:"#0a1510",borderBottom:"1px solid #1f3326",padding:"10px 12px 8px"}},[]);
   const htop=div({style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},[]);
-  htop.appendChild(btn({style:{color:"#e8f5e8",fontSize:18,fontWeight:700,padding:"8px 14px",lineHeight:1,background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,flexShrink:0},onClick:()=>{state.screen="home";renderApp();}},["← Back"]));
+  htop.appendChild(btn({style:{color:"#eaf5ea",fontSize:18,fontWeight:700,padding:"8px 14px",lineHeight:1,background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,flexShrink:0},onClick:()=>{state.screen="home";renderApp();}},["← Back"]));
   // Clear scores button — shown in scorecard header
   const hasAnyScores=[...rd.t1,...rd.t2].some(pi=>state.scores[ri]?.[pi]?.some(s=>s!==""));
   if(hasAnyScores){
@@ -1054,8 +1072,8 @@ function buildScorecardContent(ri){
     },["✕ Clear"]));
   }
   htop.appendChild(div({style:{flex:1}},[
-    div({style:{fontSize:15,fontWeight:800,color:"#e8f5e8"}},[r.label+(r.teeBox?" — "+r.teeBox:"")]),
-    div({style:{fontSize:11,color:"#6b8f6b"}},[
+    div({style:{fontSize:15,fontWeight:800,color:"#eaf5ea"}},[r.label+(r.teeBox?" — "+r.teeBox:"")]),
+    div({style:{fontSize:11,color:"#5a8a6a"}},[
       state.netEntryMode?"Net scores":state.useSlopeRating?`Rating ${r.courseRating} · Slope ${r.courseSlope} · Par ${rd.totalPar}`:`Index HCP · Par ${rd.totalPar}`
     ]),
   ]));
@@ -1064,8 +1082,8 @@ function buildScorecardContent(ri){
   const pairBoxes=div({style:{display:"flex",gap:6}},[]);
   pairs.forEach((team,pi)=>{
     const pb=div({style:{flex:1,padding:"6px 8px",borderRadius:8,
-      background:pi===0?"rgba(74,222,128,0.07)":"rgba(251,191,36,0.07)",
-      border:`1px solid ${pi===0?"rgba(74,222,128,0.2)":"rgba(251,191,36,0.2)"}`}},[]);
+      background:pi===0?"rgba(61,214,140,0.07)":"rgba(251,191,36,0.07)",
+      border:`1px solid ${pi===0?"rgba(61,214,140,0.2)":"rgba(251,191,36,0.2)"}`}},[]);
     if(team.length===0)pb.appendChild(div({style:{fontSize:11,color:"#4b5563",fontStyle:"italic"}},["Empty team"]));
     else team.forEach(idx=>pb.appendChild(div({style:{fontSize:11,fontWeight:700,color:pcolor(idx),lineHeight:1.4}},[
       state.players[idx]?.name+(state.netEntryMode?"":" (cHCP "+courseHcps[idx]+")")
@@ -1084,10 +1102,10 @@ function buildScorecardContent(ri){
 
   // Column headers
   const hdr=div({style:{display:"grid",gridTemplateColumns:cols,gap:3,marginBottom:4,padding:"0 2px"}},[
-    span({style:{fontSize:9,color:"#6b8f6b",textAlign:"center",fontWeight:700}},["H"]),
-    span({style:{fontSize:9,color:"#6b8f6b",textAlign:"center",fontWeight:700}},["PAR"]),
+    span({style:{fontSize:9,color:"#5a8a6a",textAlign:"center",fontWeight:700}},["H"]),
+    span({style:{fontSize:9,color:"#5a8a6a",textAlign:"center",fontWeight:700}},["PAR"]),
     ...t1.map(pi=>span({style:{fontSize:9,color:pcolor(pi),textAlign:"center",fontWeight:800}},[state.players[pi]?.name.split(" ")[0].slice(0,5)||"?"])),
-    span({style:{fontSize:9,color:"#6b8f6b",textAlign:"center",fontWeight:700}},["RES"]),
+    span({style:{fontSize:9,color:"#5a8a6a",textAlign:"center",fontWeight:700}},["RES"]),
     ...t2.map(pi=>span({style:{fontSize:9,color:pcolor(pi),textAlign:"center",fontWeight:800}},[state.players[pi]?.name.split(" ")[0].slice(0,5)||"?"])),
   ]);
   body.appendChild(hdr);
@@ -1128,8 +1146,8 @@ function buildScorecardContent(ri){
     for(let i=0;i<9;i++){
       const h=half*9+i;
       const hd=rd.holes[h];
-      const bg=hd.result==="p1"?"rgba(74,222,128,0.06)":hd.result==="p2"?"rgba(251,191,36,0.06)":hd.result==="halve"?"rgba(148,163,184,0.04)":"transparent";
-      const br=hd.result==="p1"?"rgba(74,222,128,0.15)":hd.result==="p2"?"rgba(251,191,36,0.15)":hd.result==="halve"?"rgba(148,163,184,0.1)":"transparent";
+      const bg=hd.result==="p1"?"rgba(61,214,140,0.06)":hd.result==="p2"?"rgba(251,191,36,0.06)":hd.result==="halve"?"rgba(148,163,184,0.04)":"transparent";
+      const br=hd.result==="p1"?"rgba(61,214,140,0.15)":hd.result==="p2"?"rgba(251,191,36,0.15)":hd.result==="halve"?"rgba(148,163,184,0.1)":"transparent";
 
       const t1Inputs=t1.map(pi=>getInputEl(pi,h));
       const t2Inputs=t2.map(pi=>getInputEl(pi,h));
@@ -1137,14 +1155,14 @@ function buildScorecardContent(ri){
       const resultBadge=span({
         "data-result-badge":"",
         style:{fontSize:hd.result?"11px":"10px",fontWeight:hd.result?"800":"400",
-          color:hd.result==="p1"?"#4ade80":hd.result==="p2"?"#fbbf24":hd.result==="halve"?"#94a3b8":"#2a3d2a"}
+          color:hd.result==="p1"?"#3dd68c":hd.result==="p2"?"#fbbf24":hd.result==="halve"?"#94a3b8":"#1f3326"}
       },[hd.result?(hd.result==="halve"?"½":"W"):"·"]);
       const row=div({"data-hole-row":h,style:{display:"grid",gridTemplateColumns:cols,gap:3,padding:"3px 2px",borderRadius:6,marginBottom:2,background:bg,border:`1px solid ${br}`}},[
         div({style:{textAlign:"center",alignSelf:"center"}},[
-          div({style:{fontSize:11,fontWeight:700,color:"#6b8f6b"}},[(h+1)+""]),
+          div({style:{fontSize:11,fontWeight:700,color:"#5a8a6a"}},[(h+1)+""]),
           ...(!state.netEntryMode?[div({style:{fontSize:8,color:"#4b5563"}},[r.hcpIdx[h]+""])]:[]),
         ]),
-        div({style:{textAlign:"center",fontSize:12,fontWeight:700,color:"#9ab89a",alignSelf:"center"}},[r.pars[h]+""]),
+        div({style:{textAlign:"center",fontSize:12,fontWeight:700,color:"#6dbf8a",alignSelf:"center"}},[r.pars[h]+""]),
         ...t1Inputs.map(inp=>div({style:{display:"flex",justifyContent:"center"}},[inp])),
         div({style:{textAlign:"center",alignSelf:"center"}},[resultBadge]),
         ...t2Inputs.map(inp=>div({style:{display:"flex",justifyContent:"center"}},[inp])),
@@ -1152,8 +1170,8 @@ function buildScorecardContent(ri){
       body.appendChild(row);
     }
     // Subtotals
-    const sub=div({style:{display:"grid",gridTemplateColumns:cols,gap:3,padding:"5px 2px 7px",borderRadius:6,background:"rgba(74,222,128,0.04)",border:"1px solid #2a3d2a",marginBottom:7}},[
-      div({style:{gridColumn:"1/3",textAlign:"center",fontSize:11,fontWeight:800,color:"#6b8f6b",alignSelf:"center"}},[half===0?"OUT":"IN"]),
+    const sub=div({style:{display:"grid",gridTemplateColumns:cols,gap:3,padding:"5px 2px 7px",borderRadius:6,background:"rgba(61,214,140,0.04)",border:"1px solid #1f3326",marginBottom:7}},[
+      div({style:{gridColumn:"1/3",textAlign:"center",fontSize:11,fontWeight:800,color:"#5a8a6a",alignSelf:"center"}},[half===0?"OUT":"IN"]),
     ]);
     [t1,t2].forEach(team=>{
       team.forEach(pi=>{
@@ -1162,34 +1180,34 @@ function buildScorecardContent(ri){
         const net=state.netEntryMode?gross:sl.reduce((s,v,i)=>{const n=getNet(ri,pi,half*9+i);return n!==null?s+n:s;},0);
         const has=sl.some(v=>v!=="");
         const grossSpan=el("span",{},[has?gross+"":"—"]);
-        const netSpan=el("span",{style:{fontSize:8,color:"#6b8f6b"}},[has&&!state.netEntryMode?"("+net+")":""]);
+        const netSpan=el("span",{style:{fontSize:8,color:"#5a8a6a"}},[has&&!state.netEntryMode?"("+net+")":""]);
         sub.appendChild(div({"data-subtotal":"player","data-subtotal-half":half,"data-subtotal-pi":pi,
-          style:{textAlign:"center",fontSize:12,fontWeight:800,color:"#e8f5e8",alignSelf:"center"}},[grossSpan,netSpan]));
+          style:{textAlign:"center",fontSize:12,fontWeight:800,color:"#eaf5ea",alignSelf:"center"}},[grossSpan,netSpan]));
       });
       if(team===t1){
         const p1h=rd.holes.slice(half*9,half*9+9).filter(h=>h.result==="p1").length;
         const p2h=rd.holes.slice(half*9,half*9+9).filter(h=>h.result==="p2").length;
         sub.appendChild(div({"data-subtotal":"split","data-subtotal-half":half,
-          style:{textAlign:"center",fontSize:11,fontWeight:700,color:"#6b8f6b",alignSelf:"center"}},[p1h+"-"+p2h]));
+          style:{textAlign:"center",fontSize:11,fontWeight:700,color:"#5a8a6a",alignSelf:"center"}},[p1h+"-"+p2h]));
       }
     });
     body.appendChild(sub);
   });
 
   // Match summary
-  const summary=div({style:{padding:"12px",background:"rgba(74,222,128,0.05)",borderRadius:12,border:"1px solid #2a3d2a"}},[]);
+  const summary=div({style:{padding:"12px",background:"rgba(61,214,140,0.05)",borderRadius:12,border:"1px solid #1f3326"}},[]);
   summary.appendChild(div({style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},[
-    span({style:{fontSize:11,fontWeight:700,color:"#6b8f6b"}},["MATCH RESULT"]),
+    span({style:{fontSize:11,fontWeight:700,color:"#5a8a6a"}},["MATCH RESULT"]),
     span({"data-summary-status":"",style:{fontSize:13,fontWeight:800,color:sColor}},[sLabel]),
   ]));
   const sg=div({style:{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,alignItems:"center"}},[]);
-  [[t1,"#4ade80",rd.p1w,rd.p1diff,"p1"],[t2,"#fbbf24",rd.p2w,rd.p2diff,"p2"]].forEach(([team,col,won,pdiff,side],pi)=>{
-    const diffSpan=span({"data-summary-diff":side,style:{color:pdiff===null?"#4b5563":pdiff<0?"#4ade80":pdiff===0?"#9ab89a":"#f97316",fontWeight:700,fontSize:11}},
+  [[t1,"#3dd68c",rd.p1w,rd.p1diff,"p1"],[t2,"#fbbf24",rd.p2w,rd.p2diff,"p2"]].forEach(([team,col,won,pdiff,side],pi)=>{
+    const diffSpan=span({"data-summary-diff":side,style:{color:pdiff===null?"#4b5563":pdiff<0?"#3dd68c":pdiff===0?"#6dbf8a":"#f97316",fontWeight:700,fontSize:11}},
       [pdiff===null?"—":(pdiff>0?"+":"")+pdiff]);
     sg.appendChild(div({style:{textAlign:"center"}},[
       div({style:{fontSize:11,color:col,marginBottom:2}},[team.map(i=>state.players[i]?.name.split(" ")[0]||"?").join(" & ")||"(empty)"]),
       div({"data-summary-won":side,style:{fontSize:22,fontWeight:900,color:col,lineHeight:1}},[won+""]),
-      div({style:{fontSize:11,color:"#6b8f6b",marginTop:2}},[diffSpan," net"]),
+      div({style:{fontSize:11,color:"#5a8a6a",marginTop:2}},[diffSpan," net"]),
     ]));
     if(pi===0)sg.appendChild(div({style:{textAlign:"center"}},[
       div({style:{fontSize:12,color:"#4b5563"}},["vs"]),
@@ -1229,20 +1247,20 @@ async function doReset(){
 function showQRModal(url){
   const overlay=div({className:"modal-overlay"},[]);
   const box=div({className:"modal-box"},[]);
-  box.appendChild(div({style:{fontSize:15,fontWeight:800,color:"#4ade80",marginBottom:4}},["⛳ Share Scorer"]));
-  box.appendChild(div({style:{fontSize:11,color:"#6b8f6b",marginBottom:16}},["Scan to view the live leaderboard (read-only)"]));
+  box.appendChild(div({style:{fontSize:15,fontWeight:800,color:"#3dd68c",marginBottom:4}},["⛳ Share Scorer"]));
+  box.appendChild(div({style:{fontSize:11,color:"#5a8a6a",marginBottom:16}},["Scan to view the live leaderboard (read-only)"]));
   // QR code via free qrserver.com API (no account needed)
   const qrSize=200;
   const qrUrl="https://api.qrserver.com/v1/create-qr-code/?size="+qrSize+"x"+qrSize+"&data="+encodeURIComponent(url)+"&bgcolor=1c2a1c&color=4ade80&margin=10";
   const img=el("img",{src:qrUrl,width:qrSize,height:qrSize,style:{borderRadius:10,display:"block",margin:"0 auto 14px"}});
   box.appendChild(img);
   // Copyable URL
-  const urlBox=div({style:{background:"rgba(255,255,255,0.04)",border:"1px solid #2a3d2a",borderRadius:8,
-    padding:"8px 10px",marginBottom:14,wordBreak:"break-all",fontSize:11,color:"#6b8f6b",textAlign:"left"}},[url]);
+  const urlBox=div({style:{background:"rgba(255,255,255,0.04)",border:"1px solid #1f3326",borderRadius:8,
+    padding:"8px 10px",marginBottom:14,wordBreak:"break-all",fontSize:11,color:"#5a8a6a",textAlign:"left"}},[url]);
   box.appendChild(urlBox);
   // Copy button
-  const copyBtn=btn({style:{width:"100%",padding:"10px",borderRadius:8,border:"1px solid rgba(74,222,128,0.3)",
-    background:"rgba(74,222,128,0.08)",color:"#4ade80",fontSize:13,fontWeight:700,marginBottom:10},
+  const copyBtn=btn({style:{width:"100%",padding:"10px",borderRadius:8,border:"1px solid rgba(61,214,140,0.3)",
+    background:"rgba(61,214,140,0.08)",color:"#3dd68c",fontSize:13,fontWeight:700,marginBottom:10},
     onClick:()=>{
       navigator.clipboard.writeText(url).then(()=>{
         copyBtn.textContent="✓ Copied!";
@@ -1253,8 +1271,8 @@ function showQRModal(url){
       });
     }},["Copy URL"]);
   box.appendChild(copyBtn);
-  box.appendChild(btn({style:{width:"100%",padding:"10px",borderRadius:8,border:"1px solid #2a3d2a",
-    color:"#6b8f6b",fontSize:13,fontWeight:700},
+  box.appendChild(btn({style:{width:"100%",padding:"10px",borderRadius:8,border:"1px solid #1f3326",
+    color:"#5a8a6a",fontSize:13,fontWeight:700},
     onClick:()=>overlay.remove()},["Close"]));
   overlay.appendChild(box);
   overlay.addEventListener("click",e=>{if(e.target===overlay)overlay.remove();});
@@ -1265,11 +1283,11 @@ function showConfirmModal(message,onConfirm){
   const overlay=div({className:"modal-overlay"},[]);
   const box=div({className:"modal-box"},[]);
   box.appendChild(div({style:{fontSize:22,marginBottom:12}},["⚠️"]));
-  box.appendChild(div({style:{fontSize:15,fontWeight:700,color:"#e8f5e8",marginBottom:8}},[message]));
-  box.appendChild(div({style:{fontSize:12,color:"#6b8f6b",marginBottom:20}},["Clears all players, scores, pars, handicaps & round setup. Cannot be undone."]));
+  box.appendChild(div({style:{fontSize:15,fontWeight:700,color:"#eaf5ea",marginBottom:8}},[message]));
+  box.appendChild(div({style:{fontSize:12,color:"#5a8a6a",marginBottom:20}},["Clears all players, scores, pars, handicaps & round setup. Cannot be undone."]));
   const btnRow=div({style:{display:"flex",gap:10}},[]);
-  btnRow.appendChild(btn({style:{flex:1,padding:"12px",borderRadius:10,border:"1px solid #2a3d2a",
-    color:"#6b8f6b",fontSize:14,fontWeight:700},
+  btnRow.appendChild(btn({style:{flex:1,padding:"12px",borderRadius:10,border:"1px solid #1f3326",
+    color:"#5a8a6a",fontSize:14,fontWeight:700},
     onClick:()=>overlay.remove()},["Cancel"]));
   btnRow.appendChild(btn({style:{flex:1,padding:"12px",borderRadius:10,border:"none",
     background:"rgba(239,68,68,0.2)",color:"#f87171",fontSize:14,fontWeight:800},
